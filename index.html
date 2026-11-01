@@ -1,0 +1,1714 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Relevé des noms sur les boîtes aux lettres, lu sur le téléphone, export CSV.">
+<meta name="theme-color" content="#eceff2" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e1419" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Relevé BAL">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<style>
+  :root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  body { margin: 0; font: 14px/1.45 system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-text-size-adjust: 100%; }
+  img { max-width: 100%; }
+  [hidden] { display: none !important; }
+  .pwa-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .pwa-bar p { margin: 0; flex: 1 1 14em; min-width: 0; color: var(--muted); }
+  .pwa-bar .btn { flex: 0 0 auto; }
+</style>
+<title>Relevé BAL</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  /* Layout: single column, four steps (photo, grille, vérifier, exporter), built for one hand on a phone. */
+  :root {
+    --bg: #eceff2;
+    --surface: #ffffff;
+    --surface-2: #f2f4f6;
+    --field: #ffffff;
+    --ink: #14202b;
+    --muted: #566573;
+    --line: #cdd5dc;
+    --accent: #0e6e6b;
+    --accent-ink: #ffffff;
+    --grid: #13d6c9;
+    --off: #ff4fa3;
+    --warn: #7a4f00;
+    --warn-bg: #fbecc4;
+    --bad: #a32a2a;
+    --focus: #1b5fd1;
+    --f-display: 'Barlow Condensed', 'Arial Narrow', 'Helvetica Neue', sans-serif;
+    --f-body: 'Barlow', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --f-mono: 'IBM Plex Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0e1419; --surface: #151d24; --surface-2: #1c262f; --field: #0e1419;
+      --ink: #e7eef3; --muted: #93a4b1; --line: #2c3944;
+      --accent: #4cc4be; --accent-ink: #06201f;
+      --warn: #f0c15a; --warn-bg: #3a2e12; --bad: #ff8f8f; --focus: #7fb0ff;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0e1419; --surface: #151d24; --surface-2: #1c262f; --field: #0e1419;
+    --ink: #e7eef3; --muted: #93a4b1; --line: #2c3944;
+    --accent: #4cc4be; --accent-ink: #06201f;
+    --warn: #f0c15a; --warn-bg: #3a2e12; --bad: #ff8f8f; --focus: #7fb0ff;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font: 400 16px/1.45 var(--f-body);
+    padding-block: 22px 56px;
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+  }
+  .wrap { max-width: 640px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+  h1, h2 { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .02em; margin: 0; text-wrap: balance; }
+  h1 { font-size: 44px; line-height: 1; font-weight: 700; }
+  h2 { font-size: 24px; line-height: 1.1; font-weight: 700; }
+  .lede { margin: 8px 0 0; color: var(--muted); max-width: 54ch; }
+
+  .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+  .sec-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .step { font: 700 22px/1 var(--f-display); width: 34px; height: 34px; display: grid; place-items: center; background: var(--ink); color: var(--surface); border-radius: 6px; flex: none; }
+  .sec-meta { margin-left: auto; color: var(--muted); font-size: 14px; font-variant-numeric: tabular-nums; }
+
+  .btn-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .btn { font: 600 16px var(--f-body); min-height: 46px; padding: 0 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+  .btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .btn.wide { width: 100%; }
+  .btn.quiet { background: transparent; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .pick { position: relative; display: grid; place-items: center; text-align: center; overflow: hidden; }
+  .pick:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .vh { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; font-size: 0; }
+  .btn:focus-visible, .ibtn:focus-visible, .thumb:focus-visible, input:focus-visible, textarea:focus-visible, .seg input:focus-visible + span { outline: 3px solid var(--focus); outline-offset: 2px; }
+
+  .tips { margin: 0; padding-left: 18px; color: var(--muted); font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+
+  .opts { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-items: end; }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .field > span, legend { font-size: 13px; color: var(--muted); letter-spacing: .02em; }
+  fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+  input[type="text"], input[type="number"] { width: 100%; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font: 400 16px var(--f-body); }
+  .stepper { display: grid; grid-template-columns: 44px minmax(0, 1fr) 44px; }
+  .stepper button { height: 44px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: 600 20px var(--f-body); cursor: pointer; }
+  .stepper button:first-child { border-radius: 8px 0 0 8px; }
+  .stepper button:last-child { border-radius: 0 8px 8px 0; }
+  .stepper input { border-radius: 0; border-left: 0; border-right: 0; text-align: center; font: 700 22px var(--f-display); font-variant-numeric: tabular-nums; }
+  .seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; }
+  .seg label { position: relative; display: block; }
+  .seg input { position: absolute; opacity: 0; inset: 0; }
+  .seg span { display: grid; place-items: center; height: 44px; padding: 0 8px; border: 1px solid var(--line); background: var(--surface-2); font-size: 14px; text-align: center; cursor: pointer; }
+  .seg label:first-child span { border-radius: 8px 0 0 8px; }
+  .seg label:last-child span { border-radius: 0 8px 8px 0; border-left: 0; }
+  .seg input:checked + span { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+
+  .stage { position: relative; background: #0b1014; border-radius: 8px; overflow: hidden; display: grid; place-items: center; min-height: 120px; }
+  .stage canvas { display: block; touch-action: none; max-width: 100%; cursor: crosshair; }
+  .stage .ph { color: #9fb0bc; font-size: 14px; padding: 24px; text-align: center; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); margin: 0; }
+  .legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+  .legend .k1 { border: 2px solid var(--grid); }
+  .legend .k2 { background: repeating-linear-gradient(45deg, var(--off) 0 2px, transparent 2px 5px); border: 1px solid var(--off); }
+
+  .hint { margin: 0; color: var(--muted); font-size: 14px; }
+  .toggle { display: flex; gap: 12px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface-2); cursor: pointer; }
+  .toggle input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+  .toggle span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .toggle b { font-weight: 600; font-size: 15px; }
+  .toggle small { color: var(--muted); font-size: 13px; line-height: 1.35; }
+  .toggle:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .status { min-height: 22px; font-size: 14px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .status.err { color: var(--bad); }
+  .bar { height: 6px; border-radius: 3px; background: var(--surface-2); overflow: hidden; }
+  .bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+  .spin { width: 16px; height: 16px; border: 2px solid var(--line); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; flex: none; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  @media (prefers-reduced-motion: reduce) { .spin { animation-duration: 3s; } .bar > i { transition: none; } }
+
+  .list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+  .row { border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 10px; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .row-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ord { font: 700 28px/1 var(--f-display); min-width: 2ch; font-variant-numeric: tabular-nums; }
+  .pos { font: 400 12px var(--f-mono); color: var(--muted); }
+  .pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+  .pill.warn { background: var(--warn-bg); color: var(--warn); border-color: transparent; }
+  .acts { margin-left: auto; display: flex; gap: 4px; }
+  .ibtn { width: 40px; height: 40px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: 600 18px/1 var(--f-body); cursor: pointer; display: grid; place-items: center; padding: 0; }
+  .ibtn:disabled { opacity: .35; cursor: not-allowed; }
+  .row-body { display: grid; grid-template-columns: 116px minmax(0, 1fr); gap: 10px; align-items: start; }
+  .row.nothumb .row-body, .row.big .row-body { grid-template-columns: minmax(0, 1fr); }
+  .thumb { padding: 0; border: 1px solid var(--line); border-radius: 6px; background: var(--surface-2); overflow: hidden; cursor: zoom-in; display: block; }
+  .row.big .thumb { cursor: zoom-out; }
+  .thumb img { display: block; width: 100%; height: auto; }
+  .fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .fields .lbl { font-size: 12px; color: var(--muted); letter-spacing: .02em; margin-bottom: -4px; }
+  textarea.names { height: auto; min-height: 44px; font: 400 16px/1.4 var(--f-body); white-space: pre-wrap; padding: 10px; overflow: hidden; }
+  .seg.pub span { height: 40px; font-size: 14px; font-weight: 600; letter-spacing: .03em; white-space: nowrap; }
+  .seg.pub input[value="STOP PUB"]:checked + span { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+  .raw { margin: 6px 0 0; font: 400 12px/1.4 var(--f-mono); color: var(--muted); overflow-wrap: anywhere; }
+
+  .empty { border: 1px dashed var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+  .empty p { margin: 0; color: var(--muted); font-size: 14px; }
+  .sample { font: 400 13px/1.6 var(--f-mono); background: var(--surface-2); border-radius: 6px; padding: 8px 10px; overflow-x: auto; white-space: pre; color: var(--muted); }
+  .tag { font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+
+  .list-tools { display: flex; gap: 8px; flex-wrap: wrap; }
+  .list-tools .btn { flex: 1; min-width: 140px; }
+  textarea { width: 100%; height: 150px; resize: vertical; border: 1px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font: 400 13px/1.5 var(--f-mono); padding: 10px; white-space: pre; overflow: auto; }
+  .undo { background: none; border: 0; padding: 0; color: var(--accent); font: 600 14px var(--f-body); text-decoration: underline; cursor: pointer; }
+  .foot { color: var(--muted); font-size: 13px; margin: 0; }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <h1>Relevé BAL</h1>
+    <p class="lede">Photographiez un meuble de boîtes aux lettres : l'app compte les boîtes, lit les étiquettes imprimées et manuscrites sur le téléphone, sans rien envoyer, et exporte un CSV dans l'ordre des boîtes.</p>
+  </header>
+  <section class="card pwa-bar" id="pwaInstall" hidden aria-label="Installation">
+    <p id="pwaInstallText">Installez Relevé BAL sur ce téléphone : icône sur l'écran d'accueil, plein écran, modèles gardés hors ligne.</p>
+    <button class="btn primary" type="button" id="pwaInstallBtn">Installer l'app</button>
+  </section>
+  <section class="card pwa-bar" id="pwaUpdate" hidden aria-label="Mise à jour">
+    <p>Une nouvelle version de l'app est prête.</p>
+    <button class="btn primary" type="button" id="pwaUpdateBtn">Mettre à jour</button>
+  </section>
+
+
+  <section class="card" aria-labelledby="h-photo">
+    <div class="sec-head"><span class="step" aria-hidden="true">1</span><h2 id="h-photo">Photo</h2></div>
+    <div class="btn-row">
+      <label class="btn primary pick" for="fileCam">Prendre une photo<input type="file" id="fileCam" class="vh" accept="image/*" capture="environment"></label>
+      <label class="btn pick" for="fileGal">Choisir une photo<input type="file" id="fileGal" class="vh" accept="image/*"></label>
+    </div>
+    <ul class="tips">
+      <li>De face, sans reflet sur les étiquettes.</li>
+      <li>Plus les étiquettes sont grandes sur la photo, mieux elles sont lues : sur un grand meuble, photographiez une moitié à la fois.</li>
+      <li>L'écriture à la main est lue, avec plus d'erreurs que l'imprimé : vérifiez les boîtes « À vérifier » à l'étape 3.</li>
+    </ul>
+  </section>
+
+  <section class="card" aria-labelledby="h-grid">
+    <div class="sec-head"><span class="step" aria-hidden="true">2</span><h2 id="h-grid">Grille</h2><span class="sec-meta" id="gridMeta"></span></div>
+    <fieldset class="field">
+      <legend>Nombre de boîtes</legend>
+      <div class="seg">
+        <label><input type="radio" name="count" value="auto" checked><span>Automatique</span></label>
+        <label><input type="radio" name="count" value="manual"><span>Manuel</span></label>
+      </div>
+    </fieldset>
+    <div class="opts">
+      <div class="field"><span id="lc">Colonnes</span>
+        <div class="stepper" role="group" aria-labelledby="lc">
+          <button type="button" data-step="cols" data-d="-1" aria-label="Une colonne de moins">−</button>
+          <input type="number" id="cols" inputmode="numeric" min="1" max="12" value="2" aria-labelledby="lc">
+          <button type="button" data-step="cols" data-d="1" aria-label="Une colonne de plus">+</button>
+        </div>
+      </div>
+      <div class="field"><span id="lr">Rangées</span>
+        <div class="stepper" role="group" aria-labelledby="lr">
+          <button type="button" data-step="rows" data-d="-1" aria-label="Une rangée de moins">−</button>
+          <input type="number" id="rows" inputmode="numeric" min="1" max="20" value="5" aria-labelledby="lr">
+          <button type="button" data-step="rows" data-d="1" aria-label="Une rangée de plus">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="stage" id="stage"><p class="ph">Prenez ou choisissez une photo à l'étape 1.</p></div>
+    <p class="legend"><span><i class="k1"></i>Boîte lue, avec son numéro d'ordre</span><span><i class="k2"></i>Case ignorée</span></p>
+    <p class="hint">En automatique, l'app compte les colonnes et les rangées dès l'ouverture de la photo. Pour corriger, changez les nombres (le mode passe en manuel ; comptez la barre centrale comme une colonne, elle est ignorée d'office), faites glisser les lignes et les coins, ou touchez une case pour l'ignorer ou la réactiver.</p>
+    <div class="btn-row">
+      <button class="btn" type="button" id="btnDetect" disabled>Recompter automatiquement</button>
+      <button class="btn" type="button" id="btnSnap" disabled>Caler sur les bords</button>
+    </div>
+    <fieldset class="field">
+      <legend>Placer les boîtes lues</legend>
+      <div class="seg">
+        <label><input type="radio" name="place" value="end" checked><span>À la fin de la liste</span></label>
+        <label><input type="radio" name="place" value="start"><span>Au début de la liste</span></label>
+      </div>
+    </fieldset>
+    <label class="toggle" for="assist">
+      <input type="checkbox" id="assist">
+      <span><b>Lecture renforcée de l'écriture manuscrite</b><small>Un second modèle, plus précis, relit les étiquettes difficiles. 38 Mo à télécharger une fois, lecture plus lente.</small></span>
+    </label>
+    <button class="btn primary wide" type="button" id="btnRead" disabled>Lire les étiquettes</button>
+    <div class="bar" id="bar" hidden><i></i></div>
+    <div class="status" id="readStatus" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="card" id="listSec" aria-labelledby="h-list">
+    <div class="sec-head"><span class="step" aria-hidden="true">3</span><h2 id="h-list">Vérifier</h2><span class="sec-meta" id="listMeta"></span></div>
+    <div class="status" id="listNote" role="status" aria-live="polite"></div>
+    <ul class="list" id="list"></ul>
+    <div class="list-tools">
+      <button class="btn" type="button" id="btnAdd">Ajouter une boîte</button>
+      <button class="btn quiet" type="button" id="btnUndoRead" hidden>Annuler la dernière lecture</button>
+      <button class="btn quiet" type="button" id="btnClear" disabled>Tout effacer</button>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-exp">
+    <div class="sec-head"><span class="step" aria-hidden="true">4</span><h2 id="h-exp">Exporter</h2></div>
+    <fieldset class="field">
+      <legend>Séparateur</legend>
+      <div class="seg">
+        <label><input type="radio" name="sep" value=";" checked><span>Point-virgule (Excel FR)</span></label>
+        <label><input type="radio" name="sep" value=","><span>Virgule</span></label>
+      </div>
+    </fieldset>
+    <label class="field" for="csvOut"><span>Aperçu du fichier : une ligne par destinataire (ordre, destinataire, n° d'appartement, pub)</span>
+      <textarea id="csvOut" readonly spellcheck="false"></textarea>
+    </label>
+    <div class="btn-row" id="expBtns">
+      <button class="btn primary" type="button" id="btnSave" disabled>Enregistrer le CSV</button>
+      <button class="btn" type="button" id="btnCopy" disabled>Copier</button>
+    </div>
+    <div class="status" id="expStatus" role="status" aria-live="polite"></div>
+  </section>
+
+  <p class="foot">Lecture faite sur l'appareil : détection PaddleOCR v4 et reconnaissance PaddleOCR v6 small (environ 26 Mo chargés à la première lecture) ; lecture renforcée : PaddleOCR v6 medium (38 Mo de plus). Les prénoms manuscrits mal lus sont corrigés à l'aide d'une liste de prénoms. Le relevé reste enregistré dans ce navigateur jusqu'à ce que vous l'effaciez.</p>
+</main>
+
+<script>
+/* Relevé BAL — first names used to correct uncertain handwritten reads (canonical spelling, accents kept). */
+var BalNames = (function () {
+  var LIST = (
+    // French, male
+    'Adam Adrien Alain Alban Albert Albin Aldric Alexandre Alexis Alfred Alphonse Amaury Ambroise Anatole André Anselme Anthony Antoine Antonin ' +
+    'Armand Arnaud Arsène Arthur Auguste Augustin Aurélien Axel Baptiste Barthélemy Basile Bastien Benjamin Benoît Bernard Bertrand Blaise Boris ' +
+    'Brice Bruno Bryan Calvin Camille Cédric Charles Charly Christian Christophe Claude Clément Colin Corentin Cyprien Cyril Cyrille Damien Daniel ' +
+    'David Denis Didier Dimitri Dominique Dorian Dylan Edgar Edmond Édouard Élie Éliott Eliot Elliot Émile Emilien Emmanuel Enzo Éric Erwan Erwann ' +
+    'Esteban Ethan Étienne Eugène Evan Fabien Fabrice Félix Ferdinand Fernand Firmin Florent Florian Francis Franck François Frédéric Gabin Gabriel ' +
+    'Gaël Gaëtan Gaspard Gaston Gauthier Gautier Geoffrey Georges Gérald Gérard Germain Gilbert Gilles Grégoire Grégory Guillaume Gustave Guy Hadrien ' +
+    'Hector Henri Hervé Hippolyte Hubert Hugo Hugues Ignace Isaac Jacques Jason Jean Jérémie Jérémy Jérôme Joachim Joël Johan Johann Jonathan Jordan ' +
+    'Joris Joseph Josué Jules Julien Justin Kenzo Kévin Killian Kylian Laurent Léandre Lenny Léo Léon Léonard Liam Lionel Loïc Lorenzo Loris Louis ' +
+    'Louka Luc Lucas Lucien Ludovic Luka Maël Malo Marc Marcel Marin Marius Martin Mathéo Matéo Mattéo Mathias Mathieu Matthieu Matthias Maurice Max ' +
+    'Maxence Maxime Michel Mickaël Milan Morgan Nathan Nathanaël Nicolas Noah Noam Noé Noël Nolan Octave Olivier Owen Pacôme Pascal Patrice Patrick ' +
+    'Paul Philippe Pierre Quentin Raphaël Raymond Régis Rémi Rémy René Richard Robert Robin Rodolphe Roger Roland Romain Romaric Ruben Sacha Samuel ' +
+    'Sébastien Serge Simon Stanislas Stéphane Steven Sullivan Sylvain Teddy Théo Théodore Théophile Thibault Thibaut Thierry Thomas Timéo Timothée ' +
+    'Titouan Tom Tony Tristan Ugo Ulysse Valentin Valère Victor Vincent Virgile Wilfried Xavier Yann Yannick Yoann Yoan Yohan Yohann Yves Yvon Zacharie ' +
+    // French, female
+    'Adèle Adeline Agathe Agnès Albane Alexandra Alexia Alice Alicia Aliénor Aline Alix Amandine Ambre Amélie Anaëlle Anaïs Andrée Angèle Angélique ' +
+    'Anna Anne Annabelle Annick Annie Anouk Apolline Ariane Arlette Astrid Audrey Aurélie Aurore Axelle Béatrice Bénédicte Bérangère Bérénice ' +
+    'Bernadette Blanche Brigitte Capucine Carine Carla Carole Caroline Cassandre Catherine Cécile Céleste Céline Chantal Charlène Charlotte Chloé ' +
+    'Christelle Christiane Christine Cindy Claire Clara Clarisse Claudine Clélia Clémence Clémentine Colette Coline Constance Coralie Corinne Cynthia ' +
+    'Danielle Danièle Daphné Delphine Denise Diane Dorothée Édith Éléonore Éliane Élisa Élisabeth Élise Ella Élodie Éloïse Elsa Émeline Émilie Emma ' +
+    'Emmanuelle Emy Enora Estelle Esther Eugénie Eva Ève Évelyne Fabienne Fanny Fiona Flavie Florence Françoise Frédérique Gabrielle Gaëlle ' +
+    'Geneviève Georgette Ginette Gisèle Gwendoline Hélène Héloïse Henriette Hortense Inès Irène Iris Isabelle Jacqueline Jade Jasmine Jeanne Jeannine ' +
+    'Jennifer Jenny Jessica Joëlle Johanna Josette Josiane Judith Julia Julie Juliette Justine Karine Kelly Laetitia Laëtitia Lalie Lana Lara Laura ' +
+    'Laure Laurence Léa Léna Lena Léonie Lila Liliane Lilou Lily Lina Line Lisa Lise Lison Lola Lou Louane Louise Louna Lucie Lucile Lucille Luna Lya ' +
+    'Lydie Madeleine Maëlle Maëlys Maëva Magali Maïa Maïwenn Manon Margaux Margot Marguerite Maria Marianne Marie Marilyn Marine Marion Marthe Martine ' +
+    'Marylène Maryse Mathilde Maud Maude Maylis Mélanie Mélina Mélissa Michèle Micheline Mila Mireille Monique Morgane Muriel Myriam Nadège Nadine ' +
+    'Nathalie Nelly Nicole Nina Noa Noémie Noëlle Océane Odette Odile Olivia Ophélie Pascale Patricia Paule Paulette Pauline Pénélope Perrine Rachel ' +
+    'Rebecca Régine Renée Romane Rosalie Rose Roxane Ruth Sabine Sabrina Salomé Sandra Sandrine Sara Sarah Séverine Simone Sixtine Solène Soline ' +
+    'Sophie Stéphanie Suzanne Sylvie Tessa Thaïs Tiphaine Typhaine Valentine Valérie Vanessa Véronique Victoire Victoria Violette Virginie Viviane ' +
+    'Yvette Yvonne Zoé ' +
+    // Basque
+    'Ainara Ainhoa Aitor Alaia Amaia Amets Ander Andoni Ane Arantxa Aritz Arrate Asier Battitte Begoña Beñat Edurne Ekaitz Ellande Endika Enaut Eneko ' +
+    'Eneritz Garazi Gaizka Gorka Haizea Iban Ibai Ibon Iker Imanol Iñaki Iñigo Irati Itziar Izaskun Joanes Jon Joseba Josu Julen Kattalin Kepa Koldo ' +
+    'Laida Leire Libe Lorea Lur Maddi Maialen Maider Maite Malen Manex Mattin Mikel Miren Nahia Naia Nekane Nerea Nora Oier Oihana Olatz Paxkal Patxi ' +
+    'Peio Txomin Udane Unai Usoa Uxue Xabi Xabier Xan Zuriñe ' +
+    // Spanish, Portuguese, Italian
+    'Alejandro Alberto Alessandro Alessia Alfonso Álvaro Ana Andrea Andrés Ángel Angelo Antonella Antonio Artur Beatriz Bruna Carlos Carmen Chiara ' +
+    'Claudia Cláudia Claudio Cláudio Conceição Cristina Davide Diego Dolores Domenico Duarte Eduardo Elena Emilio Enrique Fátima Federico Felipe ' +
+    'Fernando Filipa Francesca Francesco Francisco Gabriela Giacomo Gianni Giorgio Giovanni Giulia Giuseppe Gonçalo Gonzalo Guadalupe Ignacio Isabel ' +
+    'Javier Jesús Joana João Joaquim Joaquín Jorge José Josefa Juan Juana Julio Leonor Lorena Luca Lucia Lucía Luis Luís Luisa Manuel Manuela Marcelo ' +
+    'Marco Marcos Margarita María Mariana Mario Marta Matteo Mercedes Miguel Milagros Mónica Nuria Pablo Paloma Paola Paolo Paulo Pedro Pietro Pilar ' +
+    'Rafael Ramón Raquel Ricardo Roberta Roberto Rocío Rosa Rosario Rui Salvatore Santiago Sergio Silvia Sofía Sónia Stefano Teresa Tiago Tomás ' +
+    'Valentina Vicente Víctor Vítor Yolanda Zélia ' +
+    // Maghreb, Turkey, Middle East
+    'Abdel Abdelkader Abdellah Abderrahmane Abdou Adel Ahmed Aïcha Ali Amel Amina Amine Amir Anissa Asma Aya Ayoub Bilal Djamel Elias Farid Fatima ' +
+    'Fatma Hakim Hamza Hassan Hichem Houria Ibrahim Idir Ilyas Ilyes Imane Ismaël Jamal Kader Kaïs Kaïss Kamel Karim Khadija Lamia Leïla Lyes Malik ' +
+    'Mehdi Meriem Mohamed Mohammed Mohand Mounir Mourad Nabil Nadia Naïma Nassim Nawel Noor Nordine Nour Omar Rachid Rania Rayan Redouane Riad Saïd ' +
+    'Salim Samia Sami Samir Samira Sana Selma Sofiane Sonia Souad Sophia Tarek Walid Wassim Yacine Yanis Yasmina Yasmine Youssef Yousra Zakaria ' +
+    'Zineb Zohra ' +
+    // Western and Central Africa
+    'Abdoulaye Aïssatou Aminata Awa Binta Boubacar Cheikh Fatou Ibrahima Kadiatou Mamadou Mariama Modou Moussa Oumar Ousmane Seydou ' +
+    // Eastern Europe
+    'Anastasia Andreï Daria Dmitri Ekaterina Igor Irina Ivan Kateryna Katarzyna Ksenia Ludmila Marina Mykola Natacha Natalia Nikita Oksana ' +
+    'Oleksandr Olena Olga Pavel Piotr Sergueï Svetlana Tatiana Viktor Vladimir Yaroslav Youri Yulia ' +
+    // Romanian
+    'Adrian Alexandru Alina Andreea Andrei Bogdan Constantin Cristian Dumitru Florentina Florin Gheorghe Ioana Ion Ionel Ionut Lucian Mihaela Mihai Mircea Nicolae Petru Radu Sorin Stefan Vasile Viorel ' +
+    // English and others
+    'Ashley Charlie Emily Grace Harry James Jimmy John Kimberley Laïa Mandy Melissa Mia Nancy Oliver Peggy Steve Wendy William'
+  ).split(/\s+/);
+
+  // Common surnames that sit close to a first name: never 'corrected' into one.
+  var PROTECT = {};
+  'Martin Bernard Thomas Petit Robert Richard Durand Dubois Moreau Laurent Simon Michel Lefebvre Leroy Roux David Bertrand Morel Fournier Girard Bonnet Dupont Lambert Fontaine Rousseau Vincent Muller Lefevre Faure Andre Mercier Blanc Guerin Boyer Garnier Chevalier Francois Legrand Gauthier Garcia Perrin Robin Clement Morin Nicolas Henry Roussel Mathieu Gautier Masson Marchand Duval Denis Dumont Marie Lemaire Noel Meyer Dufour Meunier Brun Blanchard Giraud Joly Riviere Lucas Brunet Gaillard Barbier Arnaud Martinez Gerard Roche Renard Schmitt Roy Leroux Colin Vidal Caron Picard Roger Fabre Aubert Lemoine Renaud Dumas Lacroix Olivier Philippe Bourgeois Pierre Benoit Rey Leclerc Payet Rolland Leclercq Guillaume Lecomte Lopez Jean Dupuy Guillot Hubert Berger Carpentier Sanchez Dupuis Moulin Louis Deschamps Huet Vasseur Perez Boucher Fleury Royer Klein Jacquet Adam Paris Poirier Marty Aubry Guyot Carre Charles Renault Charpentier Menard Maillard Baron Bertin Bailly Herve Schneider Fernandez Le Collet Leger Bouvier Julien Prevost Millet Perrot Daniel Cousin Germain Breton Besson Langlois Remy Pelletier Leveque Perrier Leblanc Barre Lebrun Marchal Weber Mallet Hamon Boulanger Jacob Monnier Michaud Rodriguez Guichard Gillet Etienne Grondin Poulain Tessier Chevallier Collin Chauvin Bouchet Gay Lemaitre Benard Marechal Humbert Reynaud Antoine Hoarau Perret Barthelemy Cordier Pichon Lejeune Gilbert Lamy Delaunay Pasquier Carlier Laporte Gonzalez Alfonso Afonso Pereira Ferreira Oliveira Silva Santos Rodrigues Fernandes Gomes Martins Lopes Sousa Costa Ribeiro Carvalho Almeida Teixeira Correia Pinto Mendes Nunes Soares Vieira Moreira Cardoso Rocha Raposo Gonzales Hernandez Ramirez Torres Flores Rivera Gomez Diaz Morales Ortiz Jimenez Ruiz Alvarez Romero Navarro Dominguez Vazquez Ramos Gil Serrano Blanco Molina Castro Delgado Ortega Rubio Marin Sanz Iglesias Medina Garrido Cortes Castillo Santos Lozano Guerrero Cano Prieto Mendez Cruz Calvo Gallego Vidal Leon Herrera Marquez Pena Flores Cabrera Campos Vega Fuentes Carrasco Diez Caballero Reyes Nieto Aguilar Pascual Santana Herrero Lorenzo Montero Hidalgo Gimenez Ibanez Ferrer Duran Santiago Benitez Mora Vicente Vargas Arias Carmona Crespo Roman Pastor Soto Saez Velasco Moya Soler Parra Esteban Bravo Gallardo Rojas Etcheverry Etchegaray Etchebarne Etchepare Etcheto Etchebest Etchart Iriart Hiriart Elissalde Harispe Lafitte Larralde Arrieta Garat Irigoyen Ospital Dufau Darrigrand Duhalde Elizalde Goyheneche Haramboure Lacoste Lassalle Laborde Lasserre Larrieu Dumoulin Delmas Constant Constantin Laurence Florence Martine Josephine Marcel Claude Lucien Leon Jules Gabriel Raphael Thierry Valentin Mohamed Ahmed Ali Amar Hamidi Benali Belkacem Haddad Mansouri Saidi Bouzid Brahimi Cherif Khelifi Mebarki Rahmani Ziani Nguyen Tran Pham Le Kaya Yilmaz Demir Sahin Celik Dogan Ozturk Arslan Diallo Traore Diop Ndiaye Sow Keita Camara Toure Kone Coulibaly Cisse Sylla Diarra Fofana Lamarque'.split(' ').forEach(function (n) { PROTECT[key(n)] = 1; });
+
+  function key(w) { return String(w).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z]/g, ''); }
+  var BY_KEY = {}, BY_LEN = {};
+  LIST.forEach(function (n) {
+    var k = key(n);
+    if (!k || BY_KEY[k]) return;
+    BY_KEY[k] = n;
+    (BY_LEN[k.length] = BY_LEN[k.length] || []).push(k);
+  });
+
+  // Letter pairs that OCR (and handwriting) often confuse: substituting one for the other costs half.
+  var CONF = {};
+  'HM HN MN MY NR UV UI VY OD OQ IL IJ IT EF EC CG RK SJ AR BR LT'.split(' ').forEach(function (p) {
+    CONF[p[0] + p[1]] = CONF[p[1] + p[0]] = 1;
+  });
+  function wlev(a, b) {
+    var m = a.length, n = b.length, d = [], i, j;
+    for (i = 0; i <= m; i++) { d.push(new Array(n + 1)); d[i][0] = i; }
+    for (j = 0; j <= n; j++) d[0][j] = j;
+    for (i = 1; i <= m; i++) for (j = 1; j <= n; j++) {
+      var s = a[i - 1] === b[j - 1] ? 0 : (CONF[a[i - 1] + b[j - 1]] ? 0.5 : 1);
+      // a letter the reader dropped (present in the name, missing in the token) costs a bit less
+      var v = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 0.9, d[i - 1][j - 1] + s);
+      if (i > 1 && j > 1 && a[i - 1] === b[j - 2] && a[i - 2] === b[j - 1]) v = Math.min(v, d[i - 2][j - 2] + 1);
+      d[i][j] = v;
+    }
+    return d[m][n];
+  }
+  function allowed(len) { return len <= 5 ? 0.5 : len <= 7 ? 1 : 2; }
+
+  /* Exact first name (accent-insensitive): canonical spelling, else null. */
+  function exact(w) { return BY_KEY[key(w)] || null; }
+  /* Closest first name within the tolerance for this length, only if it is the unique best. */
+  function closest(w, protect, maxDist) {
+    var k = key(w);
+    if (k.length < 4 || BY_KEY[k] || PROTECT[k] || (protect && protect[k])) return null;
+    var lim = allowed(k.length), best = null, bd = 99, tie = false;
+    for (var L = k.length - 1; L <= k.length + 1; L++) {
+      var arr = BY_LEN[L]; if (!arr) continue;
+      for (var i = 0; i < arr.length; i++) {
+        var c = arr[i];
+        // the first letter must match or be a usual confusion (S/J, M/H...): keeps SAULNIER from becoming GAUTHIER
+        if (c[0] !== k[0] && !CONF[c[0] + k[0]]) continue;
+        var dd = wlev(k, c);
+        if (dd < bd) { bd = dd; best = c; tie = false; } else if (dd === bd) tie = true;
+      }
+    }
+    if (!best || tie || bd > lim || (maxDist != null && bd > maxDist)) return null;
+    return { name: BY_KEY[best], dist: bd };
+  }
+  /* Write a canonical name in the case style of the token it replaces. */
+  function styled(canon, like) {
+    var letters = String(like).replace(/[^A-Za-zÀ-ÿ]/g, '');
+    if (letters && letters === letters.toUpperCase()) return canon.toUpperCase();
+    return canon;
+  }
+  return { exact: exact, closest: closest, styled: styled, key: key, size: Object.keys(BY_KEY).length };
+})();
+if (typeof module !== 'undefined') module.exports = BalNames;
+
+/* Relevé BAL — pure functions shared by the page and the Node tests.
+   Images are {data: RGBA Uint8(Clamped)Array, width, height}. */
+var BalCore = (function () {
+  function gray(img) {
+    var n = img.width * img.height, g = new Float32Array(n), d = img.data;
+    for (var i = 0, j = 0; i < n; i++, j += 4) g[i] = 0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2];
+    return g;
+  }
+  function smooth(a, r) {
+    var out = new Float32Array(a.length);
+    for (var i = 0; i < a.length; i++) {
+      var s = 0, c = 0;
+      for (var k = -r; k <= r; k++) { var j = i + k; if (j >= 0 && j < a.length) { s += a[j]; c++; } }
+      out[i] = s / c;
+    }
+    return out;
+  }
+  /* Fraction of scan lines crossing a strong edge at each position.
+     axis 'x': vertical lines, positions along x, scanning rows y0..y1 between x0..x1. */
+  function lineProfile(g, W, H, axis, x0, x1, y0, y1, thr) {
+    thr = thr || 14;
+    x0 = Math.max(1, Math.round(x0)); x1 = Math.min(W - 2, Math.round(x1));
+    y0 = Math.max(1, Math.round(y0)); y1 = Math.min(H - 2, Math.round(y1));
+    var len = axis === 'x' ? W : H, prof = new Float32Array(len), x, y, v, n;
+    if (axis === 'x') {
+      n = y1 - y0 + 1;
+      for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
+        v = Math.abs(g[y * W + x + 1] - g[y * W + x - 1]);
+        if (v > thr) prof[x] += 1;
+      }
+    } else {
+      n = x1 - x0 + 1;
+      for (y = y0; y <= y1; y++) for (x = x0; x <= x1; x++) {
+        v = Math.abs(g[(y + 1) * W + x] - g[(y - 1) * W + x]);
+        if (v > thr) prof[y] += 1;
+      }
+    }
+    for (var i = 0; i < len; i++) prof[i] /= n;
+    return prof;
+  }
+  /* Pick k peaks in prof[a..b] with min separation sep, strongest first, returned sorted. */
+  function peaks(prof, a, b, k, sep) {
+    var cand = [];
+    for (var i = Math.max(a, 1); i < Math.min(b, prof.length - 1); i++) {
+      if (prof[i] >= prof[i - 1] && prof[i] >= prof[i + 1]) cand.push(i);
+    }
+    cand.sort(function (p, q) { return prof[q] - prof[p]; });
+    var out = [];
+    for (var c = 0; c < cand.length && out.length < k; c++) {
+      var ok = true;
+      for (var o = 0; o < out.length; o++) if (Math.abs(out[o] - cand[c]) < sep) { ok = false; break; }
+      if (ok) out.push(cand[c]);
+    }
+    return out.sort(function (p, q) { return p - q; });
+  }
+  function localPeak(prof, center, radius) {
+    var best = Math.round(center), bv = -1;
+    for (var i = Math.round(center - radius); i <= Math.round(center + radius); i++) {
+      if (i < 1 || i >= prof.length - 1) continue;
+      if (prof[i] > bv) { bv = prof[i]; best = i; }
+    }
+    return best;
+  }
+
+  /* Grid model, all in fractions of the photo (0..1):
+     {frame:{x0,y0,x1,y1}, cols:[x dividers between columns], rows:[[y dividers] per column], off:{'c,r':true}} */
+  function uniformGrid(nc, nr, frame) {
+    var f = frame || { x0: 0.06, y0: 0.12, x1: 0.94, y1: 0.88 }, g = { frame: f, cols: [], rows: [], off: {} };
+    for (var c = 1; c < nc; c++) g.cols.push(f.x0 + (f.x1 - f.x0) * c / nc);
+    for (var k = 0; k < nc; k++) {
+      var r = [];
+      for (var j = 1; j < nr; j++) r.push(f.y0 + (f.y1 - f.y0) * j / nr);
+      g.rows.push(r);
+    }
+    return g;
+  }
+  function colBounds(g, c) {
+    return [c === 0 ? g.frame.x0 : g.cols[c - 1], c === g.cols.length ? g.frame.x1 : g.cols[c]];
+  }
+  function rowBounds(g, c, r) {
+    var rs = g.rows[c];
+    return [r === 0 ? g.frame.y0 : rs[r - 1], r === rs.length ? g.frame.y1 : rs[r]];
+  }
+  function cells(g) {
+    var out = [], nc = g.cols.length + 1, nr = g.rows[0].length + 1;
+    for (var r = 0; r < nr; r++) for (var c = 0; c < nc; c++) {
+      var cb = colBounds(g, c), rb = rowBounds(g, c, r);
+      out.push({ c: c, r: r, x0: cb[0], x1: cb[1], y0: rb[0], y1: rb[1], off: !!g.off[c + ',' + r] });
+    }
+    return out;
+  }
+
+  /* Snap the grid to the photo's door edges. small = downscaled image (~700px wide).
+     mode 'detect': global peak search (counts from the grid); mode 'snap': refine near current lines. */
+  function fitGrid(small, g, mode) {
+    var W = small.width, H = small.height, gr = gray(small);
+    var nc = g.cols.length + 1, nr = g.rows[0].length + 1, f = g.frame;
+    var fx0 = f.x0 * W, fx1 = f.x1 * W, fy0 = f.y0 * H, fy1 = f.y1 * H;
+    // frame edges: local search within 6% of the photo
+    var px = smooth(lineProfile(gr, W, H, 'x', fx0 - 0.06 * W, fx1 + 0.06 * W, fy0 + 0.1 * (fy1 - fy0), fy1 - 0.1 * (fy1 - fy0)), 1);
+    var py = smooth(lineProfile(gr, W, H, 'y', fx0 + 0.1 * (fx1 - fx0), fx1 - 0.1 * (fx1 - fx0), fy0 - 0.06 * H, fy1 + 0.06 * H), 1);
+    var nfx0 = localPeak(px, fx0, 0.05 * W), nfx1 = localPeak(px, fx1, 0.05 * W);
+    var nfy0 = localPeak(py, fy0, 0.05 * H), nfy1 = localPeak(py, fy1, 0.05 * H);
+    if (nfx1 - nfx0 > 0.2 * W) { fx0 = nfx0; fx1 = nfx1; }
+    if (nfy1 - nfy0 > 0.2 * H) { fy0 = nfy0; fy1 = nfy1; }
+    var out = { frame: { x0: fx0 / W, x1: fx1 / W, y0: fy0 / H, y1: fy1 / H }, cols: [], rows: [], off: g.off };
+    var cw = (fx1 - fx0) / nc, inset = 0.1 * (fy1 - fy0);
+    var pc = smooth(lineProfile(gr, W, H, 'x', fx0, fx1, fy0 + inset, fy1 - inset), 2);
+    var xs;
+    if (mode === 'detect') xs = peaks(pc, Math.round(fx0 + 0.08 * cw), Math.round(fx1 - 0.08 * cw), nc - 1, Math.max(4, 0.15 * cw));
+    else if (mode === 'rows') xs = g.cols.map(function (x) { return x * W; });
+    else xs = g.cols.map(function (x) { return localPeak(pc, x * W, 0.3 * cw); });
+    if (xs.length !== nc - 1) xs = g.cols.map(function (x) { return x * W; });
+    out.cols = xs.map(function (x) { return x / W; });
+    for (var c = 0; c < nc; c++) {
+      var cx0 = c === 0 ? fx0 : xs[c - 1], cx1 = c === nc - 1 ? fx1 : xs[c], m = 0.12 * (cx1 - cx0);
+      var rh = (fy1 - fy0) / nr;
+      // door joints cross the whole door, slots and labels do not: keep lines present near both side edges
+      var cwid = cx1 - cx0;
+      var pl = smooth(lineProfile(gr, W, H, 'y', cx0 + 0.03 * cwid, cx0 + 0.13 * cwid, fy0, fy1), 2);
+      var prr = smooth(lineProfile(gr, W, H, 'y', cx1 - 0.13 * cwid, cx1 - 0.03 * cwid, fy0, fy1), 2);
+      var pm = smooth(lineProfile(gr, W, H, 'y', cx0 + m, cx1 - m, fy0, fy1), 2);
+      var pr = new Float32Array(pl.length);
+      for (var q = 0; q < pl.length; q++) pr[q] = Math.min(pl[q], prr[q]) * 0.7 + pm[q] * 0.3;
+      var ys;
+      if (mode === 'detect' || mode === 'rows') ys = peaks(pr, Math.round(fy0 + 0.3 * rh), Math.round(fy1 - 0.3 * rh), nr - 1, Math.max(4, 0.45 * rh));
+      else ys = g.rows[c].map(function (y) { return localPeak(pr, y * H, 0.3 * rh); });
+      if (ys.length !== nr - 1) ys = g.rows[c].map(function (y) { return y * H; });
+      out.rows.push(ys.map(function (y) { return y / H; }));
+    }
+    if (mode === 'detect' || mode === 'rows') {
+      // a column much narrower than the others is the cabinet's central bar: switch it off
+      var widths = [];
+      for (var k = 0; k < nc; k++) { var b = colBounds(out, k); widths.push(b[1] - b[0]); }
+      var sorted = widths.slice().sort(function (a, b) { return a - b; }), med = sorted[Math.floor(nc / 2)];
+      var off = {};
+      for (k = 0; k < nc; k++) if (widths[k] < 0.45 * med) for (var r = 0; r < nr; r++) off[k + ',' + r] = true;
+      out.off = off;
+    }
+    return out;
+  }
+
+  /* First guess of the cabinet's outer frame: the pair of edges between which n evenly spaced
+     doors best line up with the photo's edges (rows, then columns). */
+  function fitAxis(prof, lo, hi, n, tol, minFrac) {
+    lo = Math.max(1, Math.round(lo)); hi = Math.min(prof.length - 2, Math.round(hi));
+    var mx = 0, i, cand = [];
+    for (i = lo; i <= hi; i++) mx = Math.max(mx, prof[i]);
+    for (i = lo; i <= hi; i++) if (prof[i] >= prof[i - 1] && prof[i] >= prof[i + 1] && prof[i] >= 0.25 * mx) cand.push(i);
+    var best = null, bs = -1, span = hi - lo;
+    for (var a = 0; a < cand.length; a++) for (var b = a + 1; b < cand.length; b++) {
+      var A = cand[a], B = cand[b], L = B - A;
+      if (L < (minFrac || 0.3) * span) continue;
+      var sc = prof[A] + prof[B], step = L / n, r = Math.max(2, tol * step);
+      for (var j = 1; j < n; j++) {
+        var c = A + j * step, m = 0;
+        for (var k = Math.round(c - r); k <= Math.round(c + r); k++) if (prof[k] > m) m = prof[k];
+        sc += m;
+      }
+      sc = sc / (n + 1) * (1 + 0.5 * L / span);
+      if (sc > bs) { bs = sc; best = [A, B]; }
+    }
+    return best;
+  }
+  function guessFrame(small, nc, nr) {
+    var W = small.width, H = small.height, gr = gray(small);
+    var py = smooth(lineProfile(gr, W, H, 'y', 0.25 * W, 0.75 * W, 1, H - 2), 2);
+    var ys = fitAxis(py, 0.01 * H, 0.99 * H, nr || 4, 0.12) || [0.08 * H, 0.92 * H];
+    var px = smooth(lineProfile(gr, W, H, 'x', 1, W - 2, ys[0] + 0.05 * (ys[1] - ys[0]), ys[1] - 0.05 * (ys[1] - ys[0])), 2);
+    var xs = fitAxis(px, 0.01 * W, 0.99 * W, nc || 2, 0.3, 0.5) || [0.06 * W, 0.94 * W];
+    return { x0: xs[0] / W, y0: ys[0] / H, x1: xs[1] / W, y1: ys[1] / H };
+  }
+
+
+  /* Count columns and rows automatically. Returns {cols, rows, frame}. */
+  function countPeaks(prof, a, b, sep) {
+    var mx = 0, i;
+    for (i = Math.round(a); i < Math.round(b); i++) mx = Math.max(mx, prof[i]);
+    var thr = Math.max(0.3, 0.5 * mx);
+    var pk = peaks(prof, Math.round(a), Math.round(b), 99, sep).filter(function (i) { return prof[i] >= thr; });
+    return pk;
+  }
+  function profAt(prof, c, r) {
+    var m = 0;
+    for (var k = Math.round(c - r); k <= Math.round(c + r); k++) if (k >= 0 && k < prof.length && prof[k] > m) m = prof[k];
+    return m;
+  }
+  /* How well n evenly spaced doors explain the edges: dividers on strong lines, door middles quiet. */
+  function periodScore(prof, A, B, n) {
+    var step = (B - A) / n, r = Math.max(2, 0.1 * step), on = 0, off = 0;
+    for (var j = 1; j < n; j++) on += profAt(prof, A + j * step, r);
+    for (j = 0; j < n; j++) off += profAt(prof, A + (j + 0.5) * step, r * 0.5);
+    on = n > 1 ? on / (n - 1) : (prof[Math.round(A)] + prof[Math.round(B)]) / 2;
+    // a door-sized step beyond either end that still lands on a strong line means the frame stops short
+    var ext = Math.max(A - step > 2 ? profAt(prof, A - step, r) : 0, B + step < prof.length - 3 ? profAt(prof, B + step, r) : 0);
+    var ends = (profAt(prof, A, 2) + profAt(prof, B, 2)) / 2;
+    return on - off / n - 0.6 * Math.max(0, ext - 0.5 * ends);
+  }
+  function mergeLines(prof, a, b, sep, rel) {
+    var mx = 0, i;
+    for (i = Math.round(a); i < Math.round(b); i++) mx = Math.max(mx, prof[i]);
+    return peaks(prof, Math.round(a), Math.round(b), 99, sep).filter(function (i) { return prof[i] >= Math.max(0.25, rel * mx); });
+  }
+  function autoCount(small) {
+    var W = small.width, H = small.height, gr = gray(small);
+    var py = smooth(lineProfile(gr, W, H, 'y', 0.2 * W, 0.8 * W, 1, H - 2), 2);
+    var ys = mergeLines(py, 2, H - 3, Math.max(4, 0.06 * H), 0.45);
+    if (ys.length < 2) return { cols: 2, rows: 4, frame: guessFrame(small, 2, 4) };
+    // a slot or label edge just under a door top is not a new row: merge lines much closer than the usual spacing
+    for (var pass = 0; pass < 2 && ys.length > 2; pass++) {
+      var gs = [];
+      for (var t = 0; t < ys.length - 1; t++) gs.push(ys[t + 1] - ys[t]);
+      var gm = gs.slice().sort(function (p, q) { return p - q; })[Math.floor(gs.length / 2)];
+      var keep = [ys[0]];
+      for (t = 1; t < ys.length; t++) {
+        var prev = keep[keep.length - 1];
+        if (ys[t] - prev < 0.45 * gm) { if (py[ys[t]] > py[prev]) keep[keep.length - 1] = ys[t]; }
+        else keep.push(ys[t]);
+      }
+      ys = keep;
+    }
+    // a band about twice as tall as the others hides a weaker door joint: look for it in the middle
+    for (var pass2 = 0; pass2 < 3 && ys.length > 2; pass2++) {
+      var gs2 = [];
+      for (var t2 = 0; t2 < ys.length - 1; t2++) gs2.push(ys[t2 + 1] - ys[t2]);
+      var gm2 = gs2.slice().sort(function (p, q) { return p - q; })[Math.floor(gs2.length / 2)], pmax = 0, added = false;
+      for (t2 = 0; t2 < py.length; t2++) pmax = Math.max(pmax, py[t2]);
+      for (t2 = 0; t2 < gs2.length; t2++) {
+        if (gs2[t2] < 1.6 * gm2) continue;
+        var lo = Math.round(ys[t2] + 0.3 * gs2[t2]), hi = Math.round(ys[t2] + 0.7 * gs2[t2]), bi = -1, bv = 0;
+        for (var z = lo; z <= hi; z++) if (py[z] > bv) { bv = py[z]; bi = z; }
+        if (bi > 0 && bv >= 0.25 && bv >= 0.3 * pmax) { ys.splice(t2 + 1, 0, bi); added = true; break; }
+      }
+      if (!added) break;
+    }
+    // how much straight vertical structure (door gaps) a horizontal band holds
+    function inside(y0, y1) {
+      var pv = smooth(lineProfile(gr, W, H, 'x', 0.02 * W, 0.98 * W, y0 + 0.15 * (y1 - y0), y1 - 0.15 * (y1 - y0)), 1);
+      var vals = [];
+      for (var i = Math.round(0.03 * W); i < Math.round(0.97 * W); i++) if (pv[i] >= pv[i - 1] && pv[i] >= pv[i + 1]) vals.push(pv[i]);
+      vals.sort(function (p, q) { return q - p; });
+      return (vals[0] || 0) * 0.5 + (vals[1] || 0) * 0.5;      // the two strongest straight lines
+    }
+    var gaps = [];
+    for (var g = 0; g < ys.length - 1; g++) gaps.push(inside(ys[g], ys[g + 1]));
+    var top = Math.max.apply(null, gaps), run = null, cur = null;
+    for (g = 0; g < gaps.length; g++) {
+      var hgt = ys[g + 1] - ys[g];
+      if (gaps[g] >= 0.55 * top && hgt > 0.04 * H) { if (!cur) cur = { a: g, b: g }; else cur.b = g; }
+      else cur = null;
+      if (cur && (!run || cur.b - cur.a > run.b - run.a || (cur.b - cur.a === run.b - run.a && ys[cur.b + 1] - ys[cur.a] > ys[run.b + 1] - ys[run.a]))) run = { a: cur.a, b: cur.b };
+    }
+    if (!run) run = { a: 0, b: gaps.length - 1 };
+    var y0 = ys[run.a], y1 = ys[run.b + 1], fh = y1 - y0, rows = run.b - run.a + 1;
+    // columns: strong vertical lines across the cabinet's height
+    // slanted (perspective) lines spread their votes over a few pixels: sum them over a small window
+    var px0 = lineProfile(gr, W, H, 'x', 1, W - 2, y0 + 0.04 * fh, y1 - 0.04 * fh), rr = Math.max(2, Math.round(0.012 * W));
+    var px = smooth(px0, rr), pmx = 0;
+    for (var q = 0; q < W; q++) pmx = Math.max(pmx, px[q]);
+    for (q = 0; q < W; q++) px[q] = pmx ? px[q] / pmx : 0;
+    var xs = mergeLines(px, 2, W - 3, Math.max(3, 0.025 * W), 0.35);
+    if (xs.length < 2) return { cols: 2, rows: rows, frame: { x0: 0.06, x1: 0.94, y0: y0 / H, y1: y1 / H } };
+    var widths = [];
+    for (var c = 0; c < xs.length - 1; c++) widths.push(xs[c + 1] - xs[c]);
+    var sorted = widths.slice().sort(function (p, q) { return p - q; }), big = sorted[sorted.length - 1];
+    // a door-gap pair (two lines a few px apart) is one divider; keep the central bar (narrow but wide enough)
+    var bounds = [xs[0]];
+    for (c = 0; c < widths.length; c++) {
+      if (widths[c] < 0.035 * W && c > 0 && c < widths.length - 1) continue;
+      bounds.push(xs[c + 1]);
+    }
+    // drop slivers of a neighbouring cabinet at either edge of the photo
+    function w(i) { return bounds[i + 1] - bounds[i]; }
+    while (bounds.length > 2 && w(0) < 0.5 * big && bounds[0] < 0.06 * W) bounds.shift();
+    while (bounds.length > 2 && w(bounds.length - 2) < 0.5 * big && bounds[bounds.length - 1] > 0.94 * W) bounds.pop();
+    while (bounds.length > 2 && w(0) < 0.3 * big) bounds.shift();
+    while (bounds.length > 2 && w(bounds.length - 2) < 0.3 * big) bounds.pop();
+    // a thin strip between two door columns (much thinner than a door) is a divider, not a column
+    var ws2 = [];
+    for (c = 0; c < bounds.length - 1; c++) ws2.push(w(c));
+    var med = ws2.slice().sort(function (p, q) { return p - q; })[Math.floor(ws2.length / 2)];
+    for (c = bounds.length - 3; c >= 1; c--) {
+      if (w(c) < 0.18 * med) bounds.splice(c, 2, (bounds[c] + bounds[c + 1]) / 2);
+    }
+    var frame = { x0: bounds[0] / W, x1: bounds[bounds.length - 1] / W, y0: y0 / H, y1: y1 / H };
+    return { cols: Math.min(12, bounds.length - 1), rows: Math.min(20, rows), frame: frame, dividers: bounds.slice(1, -1).map(function (v) { return v / W; }) };
+  }
+
+  /* Find label-like bright rectangles inside a cell image. Returns boxes in cell pixels. */
+  function findLabels(cell) {
+    var W = cell.width, H = cell.height, d = cell.data, n = W * H;
+    var L = new Float32Array(n), S = new Float32Array(n), hist = new Uint32Array(256);
+    for (var i = 0, j = 0; i < n; i++, j += 4) {
+      var r = d[j], gg = d[j + 1], b = d[j + 2], mx = Math.max(r, gg, b), mn = Math.min(r, gg, b);
+      L[i] = 0.299 * r + 0.587 * gg + 0.114 * b; S[i] = mx ? (mx - mn) / mx : 0;
+      hist[Math.min(255, L[i] | 0)]++;
+    }
+    function pct(p) { var t = n * p, s = 0; for (var k = 0; k < 256; k++) { s += hist[k]; if (s >= t) return k; } return 255; }
+    var med = pct(0.5), hi = pct(0.995);
+    var thr = Math.max(med + 22, med + 0.45 * (hi - med));
+    if (hi - med < 25) return [];
+    var bin = new Uint8Array(n);
+    for (i = 0; i < n; i++) bin[i] = L[i] >= thr && S[i] < 0.42 ? 1 : 0;
+    // close small gaps (text strokes inside labels): horizontal then vertical dilation by 2
+    var tmp = new Uint8Array(n), R = Math.max(1, Math.round(W / 220));
+    for (var y = 0; y < H; y++) for (var x = 0; x < W; x++) {
+      var v = 0; for (var k2 = -R; k2 <= R && !v; k2++) { var xx = x + k2; if (xx >= 0 && xx < W && bin[y * W + xx]) v = 1; }
+      tmp[y * W + x] = v;
+    }
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      v = 0; for (k2 = -R; k2 <= R && !v; k2++) { var yy = y + k2; if (yy >= 0 && yy < H && tmp[yy * W + x]) v = 1; }
+      bin[y * W + x] = v;
+    }
+    var lab = new Int32Array(n), comps = [], stack = [];
+    for (i = 0; i < n; i++) {
+      if (!bin[i] || lab[i]) continue;
+      var id = comps.length + 1, c = { x0: W, y0: H, x1: 0, y1: 0, area: 0 };
+      lab[i] = id; stack.push(i);
+      while (stack.length) {
+        var p = stack.pop(), px = p % W, py = (p - px) / W;
+        c.area++; if (px < c.x0) c.x0 = px; if (px > c.x1) c.x1 = px; if (py < c.y0) c.y0 = py; if (py > c.y1) c.y1 = py;
+        if (px > 0 && bin[p - 1] && !lab[p - 1]) { lab[p - 1] = id; stack.push(p - 1); }
+        if (px < W - 1 && bin[p + 1] && !lab[p + 1]) { lab[p + 1] = id; stack.push(p + 1); }
+        if (py > 0 && bin[p - W] && !lab[p - W]) { lab[p - W] = id; stack.push(p - W); }
+        if (py < H - 1 && bin[p + W] && !lab[p + W]) { lab[p + W] = id; stack.push(p + W); }
+      }
+      comps.push(c);
+    }
+    var out = comps.filter(function (c) {
+      var w = c.x1 - c.x0 + 1, h = c.y1 - c.y0 + 1, ar = w / h, fill = c.area / (w * h);
+      if (w < 0.12 * W || h < 0.035 * H || h > 0.45 * H) return false;
+      if (ar < 1.3 || ar > 9) return false;
+      if (fill < 0.55) return false;
+      if (w > 0.75 * W) return false;               // letter slot or a whole panel
+      return true;
+    });
+    out.sort(function (a, b) { return a.y0 - b.y0 || a.x0 - b.x0; });
+    return out.slice(0, 4).map(function (c) {
+      var w = c.x1 - c.x0 + 1, h = c.y1 - c.y0 + 1, mx = 0.04 * w, my = 0.12 * h;
+      return { x: Math.max(0, c.x0 - mx), y: Math.max(0, c.y0 - my), w: Math.min(W - Math.max(0, c.x0 - mx), w + 2 * mx), h: Math.min(H - Math.max(0, c.y0 - my), h + 2 * my) };
+    });
+  }
+
+  /* Contrast-stretch an RGBA image to gray in place (helps faded labels). */
+  function stretch(img) {
+    var d = img.data, n = img.width * img.height, hist = new Uint32Array(256), i, j;
+    for (i = 0, j = 0; i < n; i++, j += 4) hist[(0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2]) | 0]++;
+    var lo = 0, hi = 255, s = 0;
+    for (i = 0; i < 256; i++) { s += hist[i]; if (s >= n * 0.02) { lo = i; break; } }
+    s = 0;
+    for (i = 255; i >= 0; i--) { s += hist[i]; if (s >= n * 0.02) { hi = i; break; } }
+    var k = hi > lo ? 255 / (hi - lo) : 1;
+    for (i = 0, j = 0; i < n; i++, j += 4) {
+      var v = (0.299 * d[j] + 0.587 * d[j + 1] + 0.114 * d[j + 2] - lo) * k;
+      v = v < 0 ? 0 : v > 255 ? 255 : v;
+      d[j] = d[j + 1] = d[j + 2] = v;
+    }
+    return img;
+  }
+
+  /* ---------- text cleaning ---------- */
+  var Names = (typeof BalNames !== 'undefined') ? BalNames : (typeof require !== 'undefined' ? require('./names.js') : null);
+  var NOISE = [/st[o0]p\s*[aà]?\s*(la\s*)?pub/i, /\bpub\b/i, /publicit/i, /\bmerci\b/i, /no\s*pub/i, /prospectus/i, /pubarik/i,
+    /factur/i, /collectivit/i, /\brenz\b/i, /\bthe\s*roof\b/i, /\boui\s+[aà]\b/i, /pas\s+de\b/i, /bo[iî]te\s+aux/i, /aux\s+lettres/i, /plan[eè]te/i, /\bsvp\b/i,
+    /\bpu[bej8]\b/i, /lapub/i, /pub!/i, /^ou[iyt]\s*[aà]\s*l/i, /^ou[it][a-z]{10,}/i, /n[eé]rc[il]/i, /m[eé]rc[il]/i, /z[eé]ro/i,
+    /colle[cg]/i, /pas\s*de/i, /\bfacture/i,
+    // notices and anti-advertising stickers seen on mailboxes ("L'abus de prospectus est dangereux pour ma planète", "Trions plus fort", ...)
+    /dangereu/i, /\babus\b/i, /trions/i, /plus\s*fort/i, /\.\s*com\b/i, /www\./i, /pays\s*basque/i, /euskal/i, /elkar/i, /[xk]argoa/i,
+    /viron/i, /t[eé]g[eé]ons/i, /[eé]pargne/i, /annonces/i, /journaux/i, /r[eé]duisons/i, /d[eé]chets/i, /jetons/i, /\bmoins\b/i,
+    /agglom/i, /\bsud[\s-]*ouest\b/i, /r[eé]sidence/i, /\ball[eé]es?\b/i, /\b(rue|avenue|boulevard|impasse|chemin|cedex)\b/i, /\b64\d{3}\b/, /\brappel\b/i, /facteur/i, /distribu/i, /adressage/i, /r[eé]sidents?\b/i, /code\s*postal/i,
+    // La Poste notice panel ("Indiquez les prénoms et noms des résidents...")
+    /indiquez/i, /courrier/i, /adresser/i, /pr[eé]cisez/i, /\bvous\b/i, /\bvotre\b/i, /\bnom\s*-\s*pr/i, /pr[eé]noms?\s+et\s+noms?/i,
+    /\bn\s*°?\s*voie\b/i, /r[eè]gles/i, /facilitez/i, /\bescalier\b/i];
+  var NOISE_WORD = /^de?p[iu][bp]!?$|^st[o0]p[a-z]?!?$|^s[t-]?[c0o]?[fp]$|^st-?p$|^pu[bej8]!?$|^(la|no|de)?pub[a-z]?!?$|^svp$|^m?erci$|^n[eé]rci$|^lettres?$|^stcf$|^scp$|^pjb$|^flb$|^p[ua]e$/i;
+  var CIV_NORM = [[/^(m|mr|monsieur)\.?$/i, 'M'], [/^(mme|madame)\.?$/i, 'Mme'], [/^(mlle|melle|mademoiselle)\.?$/i, 'Mlle'], [/^mm\.?$/i, 'MM']];
+  function civ(w) { for (var i = 0; i < CIV_NORM.length; i++) if (CIV_NORM[i][0].test(w)) return CIV_NORM[i][1]; return null; }
+  // handwritten "Mr" is often read as Hr, Tn, Th, Nr...
+  var PARTICLE = /^(de|du|des|la|le|les|van|von|der|den|da|das|do|dos|del|della|di|el|al|ben|bin|ibn|y|e)$/i;
+  var CIV_FUZZY = /^(hr|tn|th|nr|mn|rr|wr|mp|mf|ur)\.?$/i;
+  var FLOOR = /(rdc(?=ap|\b)|\br\.?\s?d\.?\s?c\.?|\b[0-9z]\s*(?:er|e|è|é|[eèé]me|eme)?\s*[ée]tage)\b/ig;
+  var FLOOR_WORD = /[eé][th]age?|[eé]tag\b|^etg$/i;
+  var APT_CODE = /\b([A-Z]{1,2}\d{0,2})\s?[-–—]\s?(\d{2,4})\b/;                  // C3-336
+  var APT_HASH = /#\s*([A-Z]?\d{1,4})\b/i;                                          // #108
+  var APT_GLUED = /(?<=[a-z])(?:apt|apl|appt|app)\s*[.:°]?\s*(\d{1,4}[A-Z]?)\b/i;    // RDCApt2
+  var APT_WORD = /\b(?:apt|apl|apr|aot|apf|afpt|app|appt|apprt|appart(?:ement)?|logt|logement|log|ppt|n°|no|num[ée]ro|n)\s*[.:°]?\s*([A-Z]?[0-9OoDQIlzZSsgqB]{1,4}[A-Z]?)\b/i;
+  var APT_LETTER = /^\s*([A-HJ-LO-Z])\s?(\d{2,4})\b/;                               // A 112, B 1410
+  var APT_LEAD = /^([A-Z]\d{1,3}[A-Z]?)(?=\s|$)/;                                    // C02 Mlle Daous Laia
+  var APT_APP = /^\s*[4A][pP0oO]{1,2}[tT]?\s*(\d{1,4})\s*$/;                         // handwritten "App 13" read as "400 13"
+  var NUM_ONLY = /^\s*[#n°]*\s*(\d{2,4}[A-Z]?)\s*$/i;
+  // letters a reader confuses with digits inside an apartment number ("Apl z0g" is 209)
+  function aptDigits(tok) {
+    var t = String(tok).replace(/[.\s]/g, ''), lead = '';
+    var m = t.match(/^([A-Z])(?=[0-9OoDQIlzZSsgqB]{2,})/);
+    if (m && /\d/.test(t.slice(1))) { lead = m[1]; t = t.slice(1); }
+    var map = { O: '0', o: '0', D: '0', Q: '0', I: '1', l: '1', z: '2', Z: '2', S: '5', s: '5', g: '9', q: '9', B: '8' };
+    var d = t.replace(/[OoDQIlzZSsgqB]/g, function (c) { return map[c]; });
+    return /^\d+[A-Z]?$/.test(d) ? lead + d : '';
+  }
+  // any way of refusing advertising: STOP PUB, Pas de pub(licité), No pub, Zéro prospectus, Pubarik ez, misread variants
+  var PUB_RE = [/st[o0][a-z]?\s*[-aà]?\s*(la\s*)?[pf]u[bp]/i, /\b[pf]u[bej8]\b!?/i, /lapub/i, /publicit/i, /no\s*-?\s*pub/i,
+    /pas\s*de\s*p/i, /prospectus/i, /\bstop\b/i, /non\s*[aàãâ]?\s*la\s*p/i, /\bla\s*pu[bdp8]\b/i, /\b[nm]on\s*[aàãâ]\s*la\b/i, /\bo?n\s+aux\s+p/i,
+    // Basque "Pubarik ez" sticker (no advertising) and its small print, including damaged reads
+    /p[uv][\s.\-·]?bar[il1|!]k/i, /\bbai\s*ez\b/i, /\bez\s*bai\b/i, /publizitat/i, /erakunde/i, /informazio/i, /^\s*ez\s*$/i];
+
+  /* Fuzzy advertising words: OCR misreads ("Puolicie", "STOe FUB", "PU-BARlK") still count. */
+  function lev(a, b) {
+    var m = a.length, n = b.length, d = [], i, j;
+    for (i = 0; i <= m; i++) d.push([i]);
+    for (j = 1; j <= n; j++) d[0][j] = j;
+    for (i = 1; i <= m; i++) for (j = 1; j <= n; j++)
+      d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[m][n];
+  }
+  function norm(w) { return String(w).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/0/g, 'O'); }
+  var PUB_WORDS = [['PUB', 1], ['PUBS', 1], ['STOP', 1], ['STOPPUB', 1], ['PUBLICITE', 3], ['PUBLICITES', 3], ['PUBLICITAIRE', 3], ['PROSPECTUS', 3], ['PUBARIK', 2], ['NOPUB', 1], ['LAPUB', 1], ['DEPUB', 1], ['PUBLIZITATE', 3], ['OUIALINFO', 3], ['COLLECTIVITES', 4]];
+  var FILLER = ['NON', 'NO', 'PAS', 'DE', 'MERCI', 'SVP', 'ZERO', 'BAI', 'EZ', 'OUI', 'LA', 'A', 'AU', 'INFO', 'DES', 'COLLECTIVITES', 'DANS', 'MA', 'BOITE', 'AUX', 'LETTRES', 'ETA',
+    'MOI', 'MOINS', 'ONS', 'TRIONS', 'JETONS', 'PLUS', 'FORT'];
+  function pubWord(w) {
+    var t = norm(w);
+    if (t.length < 3) return false;
+    for (var i = 0; i < PUB_WORDS.length; i++) {
+      var k = PUB_WORDS[i][0], tol = PUB_WORDS[i][1];
+      if (Math.abs(t.length - k.length) > tol) continue;
+      if (lev(t, k) <= tol) {
+        // 3-4 letter reads must keep the shape of PUB / STOP (first or last letter right) to avoid hitting names
+        if (k.length <= 4 && t[0] !== k[0] && t[t.length - 1] !== k[k.length - 1]) continue;
+        return true;
+      }
+    }
+    return false;
+  }
+  function fillerWord(w) {
+    var t = norm(w);
+    if (!t) return true;
+    for (var i = 0; i < FILLER.length; i++) if (t === FILLER[i] || (FILLER[i].length >= 5 && lev(t, FILLER[i]) <= 1)) return true;
+    return false;
+  }
+  function isFirst(w) { return !!(Names && Names.exact(w)); }
+
+  /* Uncertain (handwritten) reads: repair one misread first name per recipient and restore accents.
+     Never touches a recipient that already holds a correct first name, nor protected surnames. */
+  function fixRecipient(r, unsure, keep, lineConf) {
+    if (!Names) return r;
+    var ws = r.split(' '), idx = [], i;
+    for (i = 0; i < ws.length; i++) if (!civ(ws[i]) && ws[i] !== 'et' && /[A-Za-z\u00C0-\u00FF]{2}/.test(ws[i])) idx.push(i);
+    var hasFirst = idx.some(function (k) { return ws[k].split('-').some(function (p) { return Names.exact(p); }); });
+    if (unsure && !hasFirst) {
+      var best = null;
+      idx.forEach(function (k) {
+        // fairly confident reads only get the cheapest fixes (EHMA -> EMMA), so DUMITRU is not turned into DIMITRI
+        var c = Names.closest(ws[k].replace(/[^A-Za-z\u00C0-\u00FF]/g, ''), keep, lineConf != null && lineConf >= 90 ? 0.5 : null);
+        if (c && (!best || c.dist < best.dist)) best = { k: k, name: c.name, dist: c.dist };
+      });
+      if (best) ws[best.k] = Names.styled(best.name, ws[best.k]);
+    }
+    // accents on first names written in mixed case ("Laia" -> "Laïa", "Stephane" -> "Stéphane")
+    for (i = 0; i < idx.length; i++) {
+      var w = ws[idx[i]];
+      if (w !== w.toUpperCase()) ws[idx[i]] = w.split('-').map(function (p) { var e = Names.exact(p); return e && p !== p.toUpperCase() ? e : p; }).join('-');
+    }
+    return ws.join(' ');
+  }
+
+  /* One line per person: "OULAI David et Olivia" -> "OULAI David", "OULAI Olivia";
+     "ENEKO et JESUS" followed by a lone "LAZCANO" -> "ENEKO LAZCANO", "JESUS LAZCANO".
+     A couple named with one first name ("M et Mme VITCHEN Pierre") stays on one line. */
+  function splitCouples(list) {
+    var out = [], i;
+    for (i = 0; i < list.length; i++) {
+      var ws = list[i].split(' ');
+      if (ws.some(function (w) { return civ(w); })) { out.push(list[i]); continue; }
+      var firsts = [], sur = [], firstAt = -1;
+      ws.forEach(function (w, k) { if (w === 'et') return; if (isFirst(w)) { firsts.push(w); if (firstAt < 0) firstAt = k; } else sur.push({ w: w, k: k }); });
+      var joinedByEt = ws.indexOf('et') > 0 && firsts.length >= 2;
+      if (!joinedByEt) { out.push(list[i]); continue; }
+      var surBefore = sur.filter(function (x) { return x.k < firstAt; }).map(function (x) { return x.w; }).join(' ');
+      var surAfter = sur.filter(function (x) { return x.k > firstAt; }).map(function (x) { return x.w; }).join(' ');
+      if (!sur.length) {
+        // first names only: borrow a lone surname written on the next line
+        var nxt = list[i + 1];
+        if (nxt && !/\s/.test(nxt) && !isFirst(nxt) && nxt === nxt.toUpperCase()) { firsts.forEach(function (f) { out.push(f + ' ' + nxt); }); i++; continue; }
+        out.push(list[i]); continue;
+      }
+      firsts.forEach(function (f) { out.push([surBefore, f, surAfter].filter(Boolean).join(' ')); });
+    }
+    return out;
+  }
+
+  /* lines: [{text, conf}] in reading order.
+     Returns {names: [one recipient per entry], name, apt, pub: 'STOP PUB' | 'OK PUB', conf, raw} */
+  function parseLabel(lines) {
+    var apt = '', recips = [], confs = [], raw = [], stop = false;
+    // a notice panel (many sentence-like lines) is not a mailbox label: read nothing from it
+    var PANEL = /indiquez|courrier|adresser|pr[eé]cisez|r[eé]sidents|r[eè]gles\s+d|facilitez|adressage|distribu[eé]|facteur|code\s*postal/i;
+    // a letter seen through the notice window (an address block) is not a label either
+    var ADDRESS = /r[eé]sidence|\ball[eé]es?\b|\b(rue|avenue|boulevard|impasse|chemin|cedex)\b|\b64\d{3}\b|\brappel\b/i;
+    if (lines.filter(function (ln) { return PANEL.test(String(ln.text || '')); }).length >= 2 ||
+        lines.filter(function (ln) { return ADDRESS.test(String(ln.text || '')); }).length >= 2) return { names: [], name: '', apt: '', pub: 'OK PUB', conf: 0, raw: lines.map(function (l) { return l.text; }).join(' | '), panel: true };
+    // words read with high confidence anywhere on this label are never "corrected" elsewhere on it
+    var keep = {};
+    lines.forEach(function (ln) { if (ln.conf >= 98 && Names) String(ln.text || '').split(/[\s\/]+/).forEach(function (w) { var k = Names.key(w); if (k.length >= 4) keep[k] = 1; }); });
+    var aptRank = 9;
+    function setApt(v, rank) { if (v && /[1-9]/.test(v) && (rank || 1) < aptRank) { apt = v; aptRank = rank || 1; } }
+    lines.forEach(function (ln) {
+      var t = String(ln.text || '').replace(/[|_~`^"“”«»<>\[\]{}()=*]/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!t) return;
+      raw.push(t);
+      var unsure = ln.conf == null || ln.conf < 98;
+      var words0 = t.split(/\s+/);
+      if (PUB_RE.some(function (re) { return re.test(t); }) || words0.some(pubWord)) {
+        stop = true;
+        // a name can share the line with the sticker ("PUB Georges KIOCK"): keep it only if two real words remain
+        var rest = words0.filter(function (w) {
+          return w.replace(/[^A-Za-z\u00C0-\u00FF]/g, '').length >= 4 && !pubWord(w) && !fillerWord(w) && !NOISE_WORD.test(w) &&
+            !/publicit|prospectus|pubarik|barik|merci|erakunde|informazio|publizitat|etxe|bidal/i.test(w);
+        });
+        if (rest.length < 2 || ln.conf < 80) return;
+        t = rest.join(' ');
+      } else if (NOISE.some(function (re) { return re.test(t); })) return;
+      if (words0.every(fillerWord)) return;
+      if (/^[A-Za-z]{1,3}$/.test(t) && !civ(t)) return;
+      t = t.replace(/rdc\s*(?=ap)/ig, ' RDC ');
+      // apartment number: every pattern is stripped from the text, the first one found is kept
+      var m;
+      if ((m = t.match(APT_CODE))) { setApt(m[1].toUpperCase() + '-' + m[2]); t = t.replace(m[0], ' '); }
+      if ((m = t.match(APT_HASH))) { setApt(m[1].toUpperCase()); t = t.replace(m[0], ' '); }
+      if ((m = t.match(APT_GLUED))) { setApt(m[1].toUpperCase()); t = t.replace(m[0], ' '); }
+      if ((m = t.match(APT_WORD)) && /\d/.test(m[1]) && aptDigits(m[1])) { setApt(aptDigits(m[1])); t = t.replace(m[0], ' '); }
+      if ((m = t.match(APT_APP))) { setApt(m[1], 2); t = ''; }
+      if ((m = t.match(APT_LETTER))) { setApt(m[1] + m[2]); t = t.replace(m[0], ' '); }
+      if ((m = t.trim().match(APT_LEAD))) { setApt(m[1]); t = t.trim().slice(m[0].length); }
+      if ((m = t.match(NUM_ONLY))) { setApt(m[1].toUpperCase(), 3); t = ''; }
+      // an apartment keyword followed by something that is not a number is a misread scrap ("Aot ANO")
+      t = t.replace(/\b(?:apt|apl|apr|aot|apf|afpt|appt|apprt|ppt)\s*[.:°]?\s*\S{1,4}(?=\s|$)/ig, ' ');
+      t = t.replace(/\b(?:appartement|apprt|appt|apt)\b\.?/ig, ' ');
+      t = t.replace(FLOOR, ' ').replace(/\b(cour|b[aâ]t(?:iment)?|esc(?:alier)?)\b\.?/ig, ' ');
+      // floor words misread ("1 Ehage", "AerETAG") and the ordinal before them
+      var tw = t.trim().split(/\s+/), kept = [];
+      for (var q = 0; q < tw.length; q++) {
+        if (FLOOR_WORD.test(tw[q])) { if (kept.length && /^(\d+|[z2a1])(er|e|è|ème|eme|éme)?$/i.test(kept[kept.length - 1])) kept.pop(); continue; }
+        kept.push(tw[q]);
+      }
+      t = kept.join(' ');
+      if (ln.conf != null && ln.conf < 50) return;   // unreadable scribbles: keep any number found above, no name
+      if (unsure) {
+        var w1 = t.trim().split(/\s+/);
+        if (w1.length >= 2 && CIV_FUZZY.test(w1[0]) && /^[A-Z\u00C0-\u00DD]/.test(w1[1])) { w1[0] = 'M'; t = w1.join(' '); }
+      }
+      var cand = [];
+      t.replace(/\s*\+\s*/g, ' / ').split('/').forEach(function (seg) { splitPeople(seg).forEach(function (r) { cand.push(r); }); });
+      // "MARTIN Sophie / Christian": a lone first name after a slash shares the surname written before it
+      function surnameOf(r) {
+        var w = r.split(' '), mixedFirst = w.some(function (y) { return y !== y.toUpperCase() && isFirst(y); });
+        var sur = w.filter(function (x) { return !civ(x) && x !== 'et' && (!isFirst(x) || (mixedFirst && x === x.toUpperCase())); });
+        return sur.length === 1 ? { w: sur[0], first: w[0] === sur[0] } : null;
+      }
+      for (var ci = 1; ci < cand.length; ci++) {
+        if (/\s/.test(cand[ci]) || !isFirst(cand[ci])) continue;
+        var sp = surnameOf(cand[ci - 1]);
+        if (sp) cand[ci] = sp.first ? sp.w + ' ' + cand[ci] : cand[ci] + ' ' + sp.w;
+      }
+      // "Aurélien + Eliot + Juliette BRIOIS": the surname written last belongs to every first name before it
+      for (ci = cand.length - 2; ci >= 0; ci--) {
+        if (/\s/.test(cand[ci]) || !isFirst(cand[ci])) continue;
+        var sn = surnameOf(cand[ci + 1]);
+        if (sn && !sn.first) cand[ci] = cand[ci] + ' ' + sn.w;
+      }
+      var solo = cand.length === 1 && !/\s/.test(cand[0]);
+      var lineRecips = [];
+      cand.forEach(function (r) {
+        // names carry capitals: an all-lowercase phrase, or one with two plain lowercase words, is sticker text read wrong
+        var rw = r.split(' ').filter(function (x) { return !civ(x) && x !== 'et'; });
+        if (rw.length && rw.every(function (x) { return x === x.toLowerCase(); }) && !rw.some(isFirst)) return;
+        if (rw.filter(function (x) { return x === x.toLowerCase() && !PARTICLE.test(x); }).length >= 2) return;
+        // only tiny words ("IT MXI") and no known first name: a scrap
+        if (rw.length && rw.every(function (x) { return x.replace(/[^A-Za-z\u00C0-\u00FF]/g, '').length <= 3; }) && !rw.some(isFirst)) return;
+        // short low-confidence fragments are misread scraps, not people
+        if (ln.conf != null && ln.conf < 75 && r.replace(/[^A-Za-z\u00C0-\u00FF]/g, '').length < 5) return;
+        // a single lowercase word ("lons", "rala") is a scrap of sticker text, not a name
+        if (solo && r === r.toLowerCase() && !isFirst(r)) return;
+        lineRecips.push(fixRecipient(r, unsure, keep, ln.conf));
+      });
+      // a lone word on its own line may be joined with the next line's lone word (surname / first name)
+      lineRecips.forEach(function (r) { recips.push({ text: r, solo: solo }); });
+      if (lineRecips.length) confs.push(ln.conf);
+    });
+    // a civility token starts a new recipient, except right after another civility or "et" ("M. et Mme DUPONT")
+    function splitPeople(seg) {
+      var words = seg.trim().split(/\s+/), out = [], cur = [];
+      words.forEach(function (w, i) {
+        var c = civ(w), isAnd = /^(et|&)$/i.test(w);
+        if (isAnd) { if (cur.length) cur.push('et'); return; }
+        if (c) {
+          var prev = cur[cur.length - 1];
+          if (cur.length && !(prev === 'et' || civ(prev))) { out.push(cur); cur = []; }
+          cur.push(c); return;
+        }
+        if (i > 0 && /^[A-Z\u00C0-\u00DD]\.$/.test(w)) { cur.push(w); return; }
+        var letters = (w.match(/[A-Za-z\u00C0-\u00FF]/g) || []).length;
+        if (letters < 2 || letters / w.length < 0.7 || NOISE_WORD.test(w) || pubWord(w)) return;
+        if (/^[a-z\u00DF-\u00FF]+[A-Z]/.test(w)) return;            // "tRerte": misread scrap
+        var clean = w.replace(/^[^A-Za-z\u00C0-\u00FF]+|[^A-Za-z\u00C0-\u00FF.'\-]+$/g, '');
+        // "OULAI David & Olivia MIREMONT Olivia": a new SURNAME followed by a first name starts a second person
+        var nxt = words[i + 1];
+        if (cur.length && clean.length >= 3 && clean === clean.toUpperCase() && !isFirst(clean) && nxt && isFirst(nxt) &&
+            cur.some(function (x) { return isFirst(x); })) { out.push(cur); cur = []; }
+        cur.push(clean);
+      });
+      if (cur.length) out.push(cur);
+      return out.map(function (ws) {
+        while (ws.length && ws[ws.length - 1] === 'et') ws.pop();
+        return ws.join(' ');
+      }).filter(function (r) {
+        // keep a recipient only if it holds a real word besides the civility
+        var body = r.split(' ').filter(function (w) { return !civ(w) && w !== 'et'; }).join('');
+        return body.replace(/[^A-Za-z\u00C0-\u00FF]/g, '').length >= (r !== body ? 3 : 4);
+      });
+    }
+    if (!apt) {
+      for (var q = 0; q < raw.length && !apt; q++) {
+        if (NOISE.some(function (re) { return re.test(raw[q]); }) || PUB_RE.some(function (re) { return re.test(raw[q]); })) continue;
+        var mm = raw[q].match(/(?:^|\s)(\d{2,4})(?=\s|$)/);
+        if (mm && /[1-9]/.test(mm[1])) apt = mm[1];
+      }
+    }
+    // one-word lines in a row are usually first name and surname written on two lines
+    var joined = [], lastSolo = false;
+    recips.forEach(function (n) {
+      var last = joined[joined.length - 1];
+      if (last && lastSolo && n.solo && (isFirst(last) || isFirst(n.text))) { joined[joined.length - 1] = last + ' ' + n.text; lastSolo = false; }
+      else { joined.push(n.text); lastSolo = n.solo; }
+    });
+    joined = splitCouples(joined);
+    // the same person read twice (two labels, or a label and a letter) is listed once
+    var seen = {};
+    joined = joined.filter(function (n) { var k = norm(n.replace(/\b(M|Mme|Mlle|MM)\b/g, '')); if (!k || seen[k]) return false; seen[k] = 1; return true; });
+    var conf = confs.length ? confs.reduce(function (a, b) { return a + b; }, 0) / confs.length : 0;
+    return { names: joined, name: joined.join(' / '), apt: apt, pub: stop ? 'STOP PUB' : 'OK PUB', conf: Math.round(conf), raw: raw.join(' | ') };
+  }
+
+  return { _smooth: smooth, _lineProfile: lineProfile, _peaks: peaks, _fitAxis: fitAxis, _periodScore: periodScore, autoCount: autoCount, guessFrame: guessFrame, gray: gray, uniformGrid: uniformGrid, fitGrid: fitGrid, cells: cells, colBounds: colBounds, rowBounds: rowBounds, findLabels: findLabels, stretch: stretch, parseLabel: parseLabel };
+})();
+if (typeof module !== 'undefined') module.exports = BalCore;
+
+</script>
+<script>
+(function () {
+  var C = BalCore;
+  var KEY = 'releve-bal-v3';
+  var state = { boxes: [], sep: ';', place: 'end', cols: 2, rows: 5, photoCount: 0, assist: false };
+  var photo = null;          // HTMLImageElement of the current photo
+  var full = null;           // full-resolution canvas of the photo
+  var small = null;          // downscaled ImageData used for grid detection
+  var grid = null, gridDirty = false;
+  var lastBatch = [], lastDeleted = null, downloads = null;
+  var reading = null;        // {stop: bool}
+  var engine = null, enginePromise = null;
+
+  function $(s) { return document.querySelector(s); }
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+  function plural(n, a, b) { return n + ' ' + (n > 1 ? b : a); }
+  function clampInt(v, a, b, d) { v = parseInt(v, 10); return isFinite(v) ? Math.min(b, Math.max(a, v)) : d; }
+
+  /* ---------- persistence (per-viewer convenience) ---------- */
+  var saveTimer;
+  function persist() {
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(function () {
+      try { localStorage.setItem(KEY, JSON.stringify(state)); return; } catch (e) {}
+      try {
+        var lite = JSON.parse(JSON.stringify(state));
+        lite.boxes.forEach(function (b) { delete b.thumb; });
+        localStorage.setItem(KEY, JSON.stringify(lite));
+      } catch (e2) {}
+    }, 250);
+  }
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) {
+      var s = JSON.parse(raw);
+      if (s && Array.isArray(s.boxes)) {
+        state.boxes = s.boxes.filter(function (b) { return b && typeof b === 'object'; }).map(function (b) {
+          return { id: b.id || uid(), photo: +b.photo || 0, row: +b.row || 0, col: +b.col || 0, name: String(b.name || '').replace(/\s*\/\s*/g, '\n'), apt: String(b.apt || ''), pub: b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB', check: !!b.check, empty: !!b.empty, raw: String(b.raw || ''), thumb: typeof b.thumb === 'string' ? b.thumb : '' };
+        });
+        state.sep = s.sep === ',' ? ',' : ';';
+        state.place = s.place === 'start' ? 'start' : 'end';
+        state.cols = clampInt(s.cols, 1, 12, 2);
+        state.assist = s.assist === true;
+        state.rows = clampInt(s.rows, 1, 20, 5);
+        state.photoCount = +s.photoCount || 0;
+      }
+    }
+  } catch (e) {}
+
+  /* ---------- list rendering ---------- */
+  var listEl = $('#list');
+  function rowHTML(b, i, n) {
+    var pos = b.row && b.col ? 'R' + b.row + '·C' + b.col : '';
+    if (b.photo && pos) pos += ' · photo ' + b.photo;
+    var pill = b.check ? '<span class="pill warn">À vérifier</span>' : (b.empty && !b.name && !b.apt ? '<span class="pill">Pas d\'étiquette</span>' : '');
+    var thumb = b.thumb ? '<button class="thumb" type="button" data-act="zoom" aria-label="Agrandir ou réduire la photo de la boîte ' + (i + 1) + '"><img alt="Boîte ' + (i + 1) + '" src="' + esc(b.thumb) + '"></button>' : '';
+    return '<li class="row' + (b.thumb ? '' : ' nothumb') + '" data-id="' + esc(b.id) + '">' +
+      '<div class="row-top"><span class="ord">' + (i + 1) + '</span>' +
+      (pos ? '<span class="pos">' + esc(pos) + '</span>' : '') + pill +
+      '<div class="acts">' +
+      '<button class="ibtn" type="button" data-act="up" aria-label="Monter la boîte ' + (i + 1) + '"' + (i === 0 ? ' disabled' : '') + '>↑</button>' +
+      '<button class="ibtn" type="button" data-act="down" aria-label="Descendre la boîte ' + (i + 1) + '"' + (i === n - 1 ? ' disabled' : '') + '>↓</button>' +
+      '<button class="ibtn" type="button" data-act="ins" aria-label="Insérer une boîte après la ' + (i + 1) + '">+</button>' +
+      '<button class="ibtn" type="button" data-act="del" aria-label="Supprimer la boîte ' + (i + 1) + '">✕</button>' +
+      '</div></div>' +
+      '<div class="row-body">' + thumb + '<div>' +
+      '<div class="fields">' +
+      '<label class="lbl" for="nm-' + esc(b.id) + '">Destinataires, un par ligne</label>' +
+      '<textarea class="names" id="nm-' + esc(b.id) + '" data-f="name" rows="' + Math.max(1, b.name.split('\n').length) + '" placeholder="Mme DUPONT Marie" spellcheck="false">' + esc(b.name) + '</textarea>' +
+      '<input type="text" id="ap-' + esc(b.id) + '" data-f="apt" value="' + esc(b.apt) + '" placeholder="N° appartement" aria-label="Numéro d\'appartement, boîte ' + (i + 1) + '" autocomplete="off">' +
+      '<div class="seg pub" role="radiogroup" aria-label="Publicité, boîte ' + (i + 1) + '">' +
+      '<label><input type="radio" name="pub-' + esc(b.id) + '" data-f="pub" value="STOP PUB"' + (b.pub === 'STOP PUB' ? ' checked' : '') + '><span>STOP PUB</span></label>' +
+      '<label><input type="radio" name="pub-' + esc(b.id) + '" data-f="pub" value="OK PUB"' + (b.pub !== 'STOP PUB' ? ' checked' : '') + '><span>OK PUB</span></label></div>' +
+      '</div>' + (b.raw ? '<p class="raw">Texte brut : ' + esc(b.raw) + '</p>' : '') +
+      '</div></div></li>';
+  }
+  function emptyHTML() {
+    return '<li class="empty"><span class="tag">Exemple de résultat, non exporté</span>' +
+      '<div class="sample">1  Mme Ferreira de Oliveira Carla  C02  STOP PUB\n1  M Daous Arnaud                  C02  STOP PUB\n1  Mlle Daous Laia                 C02  STOP PUB\n2  VIAL Philippe                   C3-341  OK PUB</div>' +
+      '<p>Lisez une photo à l\'étape 2, ou ajoutez les boîtes une à une.</p></li>';
+  }
+  function render() {
+    var n = state.boxes.length;
+    listEl.innerHTML = n ? state.boxes.map(function (b, i) { return rowHTML(b, i, n); }).join('') : emptyHTML();
+    var chk = state.boxes.filter(function (b) { return b.check; }).length;
+    $('#listMeta').textContent = n ? plural(n, 'boîte', 'boîtes') + (chk ? ' · ' + chk + ' à vérifier' : '') : '';
+    $('#btnClear').disabled = !n;
+    $('#btnUndoRead').hidden = !lastBatch.length;
+    updateExport();
+    persist();
+  }
+
+  /* ---------- CSV ---------- */
+  function cell(v, sep) {
+    var s = String(v == null ? '' : v);
+    if (s.indexOf(sep) > -1 || s.indexOf('"') > -1 || /[\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+  function buildCSV() {
+    var sep = state.sep;
+    // one line per recipient; the box number, apartment and advertising choice repeat on each line
+    var rows = [['ordre', 'destinataire', 'numero_appartement', 'pub']];
+    state.boxes.forEach(function (b, i) {
+      var people = String(b.name || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
+      if (!people.length) people = [''];
+      people.forEach(function (n) { rows.push([i + 1, n, b.apt, b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB']); });
+    });
+    return rows.map(function (r) { return r.map(function (c) { return cell(c, sep); }).join(sep); }).join('\r\n');
+  }
+  function updateExport() {
+    var n = state.boxes.length;
+    $('#csvOut').value = n ? buildCSV() : '';
+    $('#csvOut').placeholder = ['ordre', 'destinataire', 'numero_appartement', 'pub'].join(state.sep);
+    $('#btnSave').disabled = !n || !downloads;
+    $('#btnSave').hidden = !downloads;
+    $('#btnCopy').disabled = !n;
+    $('#expBtns').style.gridTemplateColumns = downloads ? '1fr 1fr' : '1fr';
+  }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
+
+  $('#btnSave').addEventListener('click', function () {
+    var st = $('#expStatus'); st.className = 'status';
+    if (!downloads || !state.boxes.length) return;
+    downloads.save({ filename: 'releve-bal-' + today() + '.csv', data: '﻿' + buildCSV() }).then(function () {
+      st.textContent = 'Fichier enregistré.';
+    }).catch(function (e) {
+      if (e && e.code === 'declined') { st.textContent = 'Enregistrement annulé.'; }
+      else { st.className = 'status err'; st.textContent = 'Enregistrement impossible ici. Utilisez Copier, puis collez dans un fichier .csv.'; }
+    });
+  });
+  $('#btnCopy').addEventListener('click', function () {
+    var st = $('#expStatus'); st.className = 'status';
+    var ta = $('#csvOut');
+    function fallback() { ta.focus(); ta.select(); st.textContent = 'Texte sélectionné. Copiez-le avec le menu de votre téléphone.'; }
+    try {
+      navigator.clipboard.writeText(buildCSV()).then(function () { st.textContent = 'CSV copié.'; }, fallback);
+    } catch (e) { fallback(); }
+  });
+
+  /* ---------- list interactions ---------- */
+  listEl.addEventListener('input', function (ev) {
+    var t = ev.target; if (!t.dataset || !t.dataset.f) return;
+    var li = t.closest('.row'); if (!li) return;
+    var b = state.boxes.find(function (x) { return x.id === li.dataset.id; }); if (!b) return;
+    if (t.type === 'radio' && !t.checked) return;
+    b[t.dataset.f] = t.value;
+    if (t.tagName === 'TEXTAREA') t.rows = Math.max(1, t.value.split('\n').length);
+    updateExport(); persist();
+  });
+  listEl.addEventListener('click', function (ev) {
+    var btn = ev.target.closest('button[data-act]'); if (!btn) return;
+    var li = btn.closest('.row');
+    if (btn.dataset.act === 'zoom') { li.classList.toggle('big'); return; }
+    var i = state.boxes.findIndex(function (x) { return x.id === li.dataset.id; }); if (i < 0) return;
+    var act = btn.dataset.act, note = $('#listNote'); note.className = 'status'; note.textContent = ''; lastDeleted = null;
+    if (act === 'up' && i > 0) { var a = state.boxes[i]; state.boxes[i] = state.boxes[i - 1]; state.boxes[i - 1] = a; }
+    else if (act === 'down' && i < state.boxes.length - 1) { var c = state.boxes[i]; state.boxes[i] = state.boxes[i + 1]; state.boxes[i + 1] = c; }
+    else if (act === 'ins') { state.boxes.splice(i + 1, 0, blank()); }
+    else if (act === 'del') {
+      lastDeleted = { box: state.boxes[i], index: i };
+      state.boxes.splice(i, 1);
+      note.innerHTML = 'Boîte ' + (i + 1) + ' supprimée. <button class="undo" type="button" id="undoDel">Annuler</button>';
+    }
+    lastBatch = lastBatch.filter(function (id) { return state.boxes.some(function (b) { return b.id === id; }); });
+    render();
+  });
+  $('#listNote').addEventListener('click', function (ev) {
+    if (ev.target.id !== 'undoDel' || !lastDeleted) return;
+    state.boxes.splice(Math.min(lastDeleted.index, state.boxes.length), 0, lastDeleted.box);
+    lastDeleted = null; this.textContent = ''; render();
+  });
+  function blank() { return { id: uid(), photo: 0, row: 0, col: 0, name: '', apt: '', pub: 'OK PUB', check: false, empty: false, raw: '', thumb: '' }; }
+  $('#btnAdd').addEventListener('click', function () {
+    var b = blank(); state.boxes.push(b); render();
+    var el = document.getElementById('nm-' + b.id); if (el) el.focus();
+  });
+  $('#btnUndoRead').addEventListener('click', function () {
+    var ids = lastBatch; lastBatch = [];
+    state.boxes = state.boxes.filter(function (b) { return ids.indexOf(b.id) < 0; });
+    var note = $('#listNote'); note.className = 'status'; note.textContent = 'Dernière lecture annulée.';
+    render();
+  });
+  var clearTimer;
+  $('#btnClear').addEventListener('click', function () {
+    var btn = this;
+    if (btn.dataset.armed) {
+      clearTimeout(clearTimer); delete btn.dataset.armed; btn.textContent = 'Tout effacer';
+      state.boxes = []; state.photoCount = 0; lastBatch = []; lastDeleted = null;
+      $('#listNote').textContent = ''; render();
+    } else {
+      btn.dataset.armed = '1'; btn.textContent = 'Confirmer l\'effacement';
+      clearTimer = setTimeout(function () { delete btn.dataset.armed; btn.textContent = 'Tout effacer'; }, 4000);
+    }
+  });
+
+  /* ---------- options ---------- */
+  var colsEl = $('#cols'), rowsEl = $('#rows');
+  colsEl.value = state.cols; rowsEl.value = state.rows;
+  var countMode = 'auto';
+  function setMode(m) {
+    countMode = m;
+    document.querySelectorAll('input[name="count"]').forEach(function (r) { r.checked = r.value === m; });
+  }
+  document.querySelectorAll('input[name="count"]').forEach(function (r) {
+    r.addEventListener('change', function () {
+      if (!r.checked) return;
+      countMode = r.value;
+      if (countMode === 'auto' && small) autoGrid();
+      else updateGridMeta();
+    });
+  });
+  function countsChanged() {
+    state.cols = clampInt(colsEl.value, 1, 12, state.cols);
+    state.rows = clampInt(rowsEl.value, 1, 20, state.rows);
+    colsEl.value = state.cols; rowsEl.value = state.rows;
+    setMode('manual');
+    persist();
+    if (photo) detectGrid(grid ? grid.frame : null);
+  }
+  colsEl.addEventListener('change', countsChanged);
+  rowsEl.addEventListener('change', countsChanged);
+  document.querySelectorAll('[data-step]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var el = b.dataset.step === 'cols' ? colsEl : rowsEl;
+      var max = b.dataset.step === 'cols' ? 12 : 20;
+      el.value = clampInt(+el.value + +b.dataset.d, 1, max, 1);
+      countsChanged();
+    });
+  });
+  var assistEl = $('#assist');
+  assistEl.checked = state.assist;
+  assistEl.addEventListener('change', function () { state.assist = assistEl.checked; persist(); });
+  document.querySelectorAll('input[name="place"]').forEach(function (r) {
+    r.checked = r.value === state.place;
+    r.addEventListener('change', function () { if (r.checked) { state.place = r.value; persist(); } });
+  });
+  document.querySelectorAll('input[name="sep"]').forEach(function (r) {
+    r.checked = r.value === state.sep;
+    r.addEventListener('change', function () { if (r.checked) { state.sep = r.value; updateExport(); persist(); } });
+  });
+
+  /* ---------- photo ---------- */
+  ['#fileCam', '#fileGal'].forEach(function (sel) {
+    $(sel).addEventListener('change', function (ev) {
+      var f = ev.target.files && ev.target.files[0]; ev.target.value = '';
+      if (f) loadPhoto(f);
+    });
+  });
+  function loadPhoto(f) {
+    var url = URL.createObjectURL(f), img = new Image();
+    var st = $('#readStatus'); st.className = 'status'; st.textContent = 'Ouverture de la photo…';
+    img.onload = function () {
+      photo = img;
+      var W = img.naturalWidth, H = img.naturalHeight, maxSide = 4200, k = Math.min(1, maxSide / Math.max(W, H));
+      full = document.createElement('canvas');
+      full.width = Math.round(W * k); full.height = Math.round(H * k);
+      full.getContext('2d').drawImage(img, 0, 0, full.width, full.height);
+      var sk = 700 / full.width, sc = document.createElement('canvas');
+      sc.width = 700; sc.height = Math.max(1, Math.round(full.height * sk));
+      var sg = sc.getContext('2d'); sg.imageSmoothingQuality = 'high'; sg.drawImage(full, 0, 0, sc.width, sc.height);
+      small = sg.getImageData(0, 0, sc.width, sc.height);
+      st.textContent = '';
+      setupStage();
+      if (countMode === 'auto') autoGrid(); else detectGrid(null);
+    };
+    img.onerror = function () { st.className = 'status err'; st.textContent = 'Cette image ne s\'ouvre pas. Reprenez la photo en JPEG.'; };
+    img.src = url;
+  }
+
+  /* ---------- grid editor ---------- */
+  var cv = null, ctx = null, view = { w: 0, h: 0, dpr: 1 };
+  function setupStage() {
+    var stage = $('#stage');
+    stage.innerHTML = '';
+    cv = document.createElement('canvas');
+    cv.setAttribute('aria-label', 'Photo avec la grille des boîtes. Faites glisser les lignes pour les ajuster.');
+    cv.setAttribute('role', 'img');
+    stage.appendChild(cv);
+    ctx = cv.getContext('2d');
+    sizeStage();
+    ['btnDetect', 'btnSnap', 'btnRead'].forEach(function (id) { $('#' + id).disabled = false; });
+  }
+  function sizeStage() {
+    if (!cv || !full) return;
+    var stage = $('#stage'), maxW = stage.clientWidth, maxH = Math.max(320, window.innerHeight * 0.66);
+    var k = Math.min(maxW / full.width, maxH / full.height);
+    view.w = Math.round(full.width * k); view.h = Math.round(full.height * k);
+    view.dpr = Math.min(2, window.devicePixelRatio || 1);
+    cv.width = Math.round(view.w * view.dpr); cv.height = Math.round(view.h * view.dpr);
+    cv.style.width = view.w + 'px'; cv.style.height = view.h + 'px';
+    draw();
+  }
+  window.addEventListener('resize', function () { clearTimeout(sizeStage.t); sizeStage.t = setTimeout(sizeStage, 150); });
+
+  // automatic mode: count columns and rows from the photo, then place the lines
+  function autoGrid() {
+    if (!small) return;
+    var a = C.autoCount(small);
+    state.cols = a.cols; state.rows = a.rows;
+    colsEl.value = a.cols; rowsEl.value = a.rows;
+    var g = C.uniformGrid(a.cols, a.rows, a.frame);
+    if (a.dividers && a.dividers.length === a.cols - 1) g.cols = a.dividers;
+    grid = C.fitGrid(small, g, a.dividers ? 'rows' : 'detect');
+    persist(); draw(); updateGridMeta();
+  }
+  function detectGrid(frame) {
+    if (!small) return;
+    var g = C.uniformGrid(state.cols, state.rows, frame || C.guessFrame(small, state.cols, state.rows));
+    grid = C.fitGrid(small, g, 'detect');
+    draw(); updateGridMeta();
+  }
+  $('#btnDetect').addEventListener('click', function () { setMode('auto'); autoGrid(); });
+  $('#btnSnap').addEventListener('click', function () {
+    if (!grid) return;
+    var off = grid.off; grid = C.fitGrid(small, grid, 'snap'); grid.off = off; draw();
+  });
+
+  function activeCells() {
+    if (!grid) return [];
+    return C.cells(grid).filter(function (c) { return !c.off; });
+  }
+  function updateGridMeta() {
+    var n = activeCells().length, total = state.cols * state.rows;
+    $('#gridMeta').textContent = grid ? (countMode === 'auto' ? 'Auto · ' : 'Manuel · ') + plural(n, 'boîte', 'boîtes') + (total - n ? ' · ' + (total - n) + ' case' + (total - n > 1 ? 's' : '') + ' ignorée' + (total - n > 1 ? 's' : '') : '') : '';
+  }
+  function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || '#13d6c9'; }
+  function draw() {
+    if (!ctx || !full) return;
+    var W = view.w, H = view.h, d = view.dpr;
+    ctx.setTransform(d, 0, 0, d, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(full, 0, 0, W, H);
+    if (!grid) return;
+    var f = grid.frame, gc = css('--grid'), oc = css('--off');
+    ctx.fillStyle = 'rgba(0,0,0,.45)';
+    ctx.fillRect(0, 0, W, f.y0 * H); ctx.fillRect(0, f.y1 * H, W, H - f.y1 * H);
+    ctx.fillRect(0, f.y0 * H, f.x0 * W, (f.y1 - f.y0) * H); ctx.fillRect(f.x1 * W, f.y0 * H, W - f.x1 * W, (f.y1 - f.y0) * H);
+    var cells = C.cells(grid), n = 0;
+    cells.forEach(function (c) {
+      var x = c.x0 * W, y = c.y0 * H, w = (c.x1 - c.x0) * W, h = (c.y1 - c.y0) * H;
+      if (c.off) {
+        ctx.save(); ctx.beginPath(); ctx.rect(x, y, w, h); ctx.clip();
+        ctx.fillStyle = 'rgba(0,0,0,.35)'; ctx.fillRect(x, y, w, h);
+        ctx.strokeStyle = oc; ctx.lineWidth = 1.5; ctx.globalAlpha = .8;
+        for (var k = -h; k < w; k += 9) { ctx.beginPath(); ctx.moveTo(x + k, y + h); ctx.lineTo(x + k + h, y); ctx.stroke(); }
+        ctx.restore();
+      }
+    });
+    ctx.lineWidth = 2; ctx.strokeStyle = gc;
+    cells.forEach(function (c) { ctx.strokeRect(c.x0 * W, c.y0 * H, (c.x1 - c.x0) * W, (c.y1 - c.y0) * H); });
+    // reading-order numbers
+    cells.filter(function (c) { return !c.off; }).forEach(function (c) {
+      n++;
+      var x = c.x0 * W + 4, y = c.y0 * H + 4, s = Math.max(14, Math.min(22, (c.x1 - c.x0) * W * 0.18));
+      ctx.fillStyle = gc; ctx.fillRect(x, y, s * 1.5, s * 1.15);
+      ctx.fillStyle = '#04201e'; ctx.font = '700 ' + Math.round(s * 0.9) + 'px "Barlow Condensed", "Arial Narrow", sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(String(n), x + s * 0.75, y + s * 0.6);
+    });
+    // knobs
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = gc; ctx.lineWidth = 2;
+    handles().forEach(function (hd) {
+      ctx.beginPath(); ctx.arc(hd.kx, hd.ky, hd.type === 'corner' ? 7 : 5.5, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    });
+  }
+  function handles() {
+    var W = view.w, H = view.h, f = grid.frame, out = [], nc = grid.cols.length + 1;
+    [['x0', 'y0'], ['x1', 'y0'], ['x0', 'y1'], ['x1', 'y1']].forEach(function (p) {
+      out.push({ type: 'corner', kx: f[p[0]] * W, ky: f[p[1]] * H, ax: p[0], ay: p[1] });
+    });
+    grid.cols.forEach(function (x, i) { out.push({ type: 'col', i: i, kx: x * W, ky: (f.y0 + f.y1) / 2 * H }); });
+    for (var c = 0; c < nc; c++) {
+      var cb = C.colBounds(grid, c);
+      grid.rows[c].forEach(function (y, j) { out.push({ type: 'row', c: c, j: j, kx: (cb[0] + cb[1]) / 2 * W, ky: y * H }); });
+    }
+    out.push({ type: 'edge', e: 'x0', kx: f.x0 * W, ky: (f.y0 + f.y1) / 2 * H });
+    out.push({ type: 'edge', e: 'x1', kx: f.x1 * W, ky: (f.y0 + f.y1) / 2 * H });
+    out.push({ type: 'edge', e: 'y0', kx: (f.x0 + f.x1) / 2 * W, ky: f.y0 * H });
+    out.push({ type: 'edge', e: 'y1', kx: (f.x0 + f.x1) / 2 * W, ky: f.y1 * H });
+    return out;
+  }
+  // Hit test: knobs first, then whole lines.
+  function hit(px, py, touch) {
+    var W = view.w, H = view.h, R = touch ? 24 : 14, best = null, bd = R;
+    handles().forEach(function (hd) {
+      var dd = Math.hypot(hd.kx - px, hd.ky - py) - (hd.type === 'corner' ? 4 : 0);
+      if (dd < bd) { bd = dd; best = hd; }
+    });
+    if (best) return best;
+    var f = grid.frame, x = px / W, y = py / H, tol = (touch ? 14 : 8);
+    if (y < f.y0 - 0.02 || y > f.y1 + 0.02 || x < f.x0 - 0.02 || x > f.x1 + 0.02) return null;
+    var nc = grid.cols.length + 1, cands = [];
+    grid.cols.forEach(function (cx, i) { cands.push({ d: Math.abs(cx * W - px), h: { type: 'col', i: i } }); });
+    for (var c = 0; c < nc; c++) {
+      var cb = C.colBounds(grid, c);
+      if (x < cb[0] || x > cb[1]) continue;
+      grid.rows[c].forEach(function (ry, j) { cands.push({ d: Math.abs(ry * H - py), h: { type: 'row', c: c, j: j } }); });
+    }
+    cands.push({ d: Math.abs(f.x0 * W - px), h: { type: 'edge', e: 'x0' } }, { d: Math.abs(f.x1 * W - px), h: { type: 'edge', e: 'x1' } });
+    cands.push({ d: Math.abs(f.y0 * H - py), h: { type: 'edge', e: 'y0' } }, { d: Math.abs(f.y1 * H - py), h: { type: 'edge', e: 'y1' } });
+    cands.sort(function (a, b) { return a.d - b.d; });
+    return cands.length && cands[0].d < tol ? cands[0].h : null;
+  }
+  var MIN = 0.015;
+  function moveHandle(h, x, y) {
+    var f = grid.frame, nc = grid.cols.length + 1, i;
+    x = Math.min(1, Math.max(0, x)); y = Math.min(1, Math.max(0, y));
+    function setX(key, v) {
+      if (key === 'x0') { var lim = (grid.cols[0] != null ? grid.cols[0] : f.x1) - MIN; f.x0 = Math.min(v, lim); }
+      else { var lo = (grid.cols.length ? grid.cols[grid.cols.length - 1] : f.x0) + MIN; f.x1 = Math.max(v, lo); }
+    }
+    function setY(key, v) {
+      var c;
+      if (key === 'y0') { var lim = 1; for (c = 0; c < nc; c++) lim = Math.min(lim, grid.rows[c].length ? grid.rows[c][0] : f.y1); f.y0 = Math.min(v, lim - MIN); }
+      else { var lo = 0; for (c = 0; c < nc; c++) lo = Math.max(lo, grid.rows[c].length ? grid.rows[c][grid.rows[c].length - 1] : f.y0); f.y1 = Math.max(v, lo + MIN); }
+    }
+    if (h.type === 'corner') { setX(h.ax, x); setY(h.ay, y); }
+    else if (h.type === 'edge') { if (h.e[0] === 'x') setX(h.e, x); else setY(h.e, y); }
+    else if (h.type === 'col') {
+      i = h.i;
+      var lo = (i === 0 ? f.x0 : grid.cols[i - 1]) + MIN, hi = (i === grid.cols.length - 1 ? f.x1 : grid.cols[i + 1]) - MIN;
+      grid.cols[i] = Math.min(hi, Math.max(lo, x));
+    } else if (h.type === 'row') {
+      var rs = grid.rows[h.c], j = h.j;
+      var lo2 = (j === 0 ? f.y0 : rs[j - 1]) + MIN, hi2 = (j === rs.length - 1 ? f.y1 : rs[j + 1]) - MIN;
+      rs[j] = Math.min(hi2, Math.max(lo2, y));
+    }
+  }
+  var drag = null;
+  document.addEventListener('pointerdown', function (ev) {
+    if (!cv || ev.target !== cv || !grid) return;
+    var r = cv.getBoundingClientRect(), px = ev.clientX - r.left, py = ev.clientY - r.top;
+    drag = { h: hit(px, py, ev.pointerType !== 'mouse'), sx: px, sy: py, moved: false, id: ev.pointerId };
+    try { cv.setPointerCapture(ev.pointerId); } catch (e) {}
+    ev.preventDefault();
+  });
+  document.addEventListener('pointermove', function (ev) {
+    if (!drag || ev.pointerId !== drag.id) {
+      if (cv && ev.target === cv && grid && ev.pointerType === 'mouse') {
+        var r0 = cv.getBoundingClientRect(), hh = hit(ev.clientX - r0.left, ev.clientY - r0.top, false);
+        cv.style.cursor = !hh ? 'pointer' : hh.type === 'col' || (hh.type === 'edge' && hh.e[0] === 'x') ? 'ew-resize' : hh.type === 'row' || hh.type === 'edge' ? 'ns-resize' : 'move';
+      }
+      return;
+    }
+    var r = cv.getBoundingClientRect(), px = ev.clientX - r.left, py = ev.clientY - r.top;
+    if (Math.hypot(px - drag.sx, py - drag.sy) > 6) drag.moved = true;
+    if (drag.h && drag.moved) { moveHandle(drag.h, px / view.w, py / view.h); gridDirty = true; draw(); }
+  });
+  function endDrag(ev) {
+    if (!drag || ev.pointerId !== drag.id) return;
+    if (!drag.moved) {
+      // a tap toggles the cell under the finger
+      var x = drag.sx / view.w, y = drag.sy / view.h;
+      var c = C.cells(grid).filter(function (k) { return x >= k.x0 && x <= k.x1 && y >= k.y0 && y <= k.y1; })[0];
+      if (c) { var key = c.c + ',' + c.r; if (grid.off[key]) delete grid.off[key]; else grid.off[key] = true; draw(); updateGridMeta(); }
+    }
+    drag = null;
+  }
+  document.addEventListener('pointerup', endDrag);
+  document.addEventListener('pointercancel', endDrag);
+
+  /* ---------- reading engine (PaddleOCR models, runs on the device in a worker) ---------- */
+  function abs(p) { return new URL(p, location.href).href; }
+  function fetchText(p) {
+    return fetch(abs(p)).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status + ' ' + p); return r.text(); });
+  }
+  function withAssist(eng, onStatus) {
+    if (!state.assist || eng.assistLoaded) return Promise.resolve(eng);
+    onStatus('Chargement du modèle de lecture renforcée (38 Mo la première fois)…');
+    return eng.call({ type: 'assist' }).then(function () { eng.assistLoaded = true; return eng; });
+  }
+  function getEngine(onStatus) {
+    if (engine) return withAssist(engine, onStatus);
+    if (enginePromise) return enginePromise;
+    onStatus('Chargement des modèles de lecture (environ ' + (state.assist ? 64 : 26) + ' Mo la première fois)…');
+    enginePromise = Promise.all([fetchText('ocr/ort.wasm.min.js'), fetchText('ocr/bal-worker.js')]).then(function (res) {
+      var url = URL.createObjectURL(new Blob([res[0], '\n;\n', res[1]], { type: 'text/javascript' }));
+      var wk = new Worker(url), seq = 0, waiting = {};
+      wk.onmessage = function (e) {
+        var m = e.data, cb = waiting[m.id]; if (!cb) return;
+        delete waiting[m.id];
+        if (m.ok) cb.ok(m); else cb.ko(new Error(m.error));
+      };
+      wk.onerror = function (e) {
+        Object.keys(waiting).forEach(function (k) { waiting[k].ko(new Error(e.message || 'erreur du moteur')); delete waiting[k]; });
+      };
+      function call(msg, transfer) {
+        return new Promise(function (ok, ko) { msg.id = ++seq; waiting[msg.id] = { ok: ok, ko: ko }; wk.postMessage(msg, transfer || []); });
+      }
+      return call({ type: 'init', base: abs('ocr/'), assist: state.assist }).then(function (r) {
+        engine = {
+          call: call,
+          assistLoaded: !!r.assist,
+          read: function (imgData) {
+            var buf = imgData.data.buffer;
+            return call({ type: 'read', buf: buf, w: imgData.width, h: imgData.height, assist: state.assist && engine.assistLoaded }, [buf]).then(function (m) { return m.lines; });
+          }
+        };
+        return engine;
+      });
+    }).catch(function (e) { enginePromise = null; throw e; });
+    return enginePromise;
+  }
+
+  function cropCanvas(src, x, y, w, h, scale) {
+    var c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(w * scale)); c.height = Math.max(1, Math.round(h * scale));
+    var g = c.getContext('2d'); g.imageSmoothingQuality = 'high';
+    g.drawImage(src, x, y, w, h, 0, 0, c.width, c.height);
+    return c;
+  }
+  function thumbOf(c) {
+    var k = 320 / c.width, t = document.createElement('canvas');
+    t.width = 320; t.height = Math.max(1, Math.round(c.height * k));
+    t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
+    return t.toDataURL('image/jpeg', 0.72);
+  }
+  function readCell(w, c) {
+    var FW = full.width, FH = full.height;
+    var cx = c.x0 * FW, cy = c.y0 * FH, cw = (c.x1 - c.x0) * FW, ch = (c.y1 - c.y0) * FH;
+    // keep full detail up to 1400 px on the long side; small cells are enlarged so text is legible
+    var k1 = Math.min(1400 / Math.max(cw, ch), Math.max(1, 700 / Math.max(cw, ch)));
+    var cc = cropCanvas(full, cx, cy, cw, ch, k1);
+    var thumb = thumbOf(cc);
+    return w.read(cc.getContext('2d').getImageData(0, 0, cc.width, cc.height)).then(function (lines) {
+      var p = C.parseLabel(lines);
+      return { name: p.names.join('\n'), apt: p.apt, pub: p.pub, raw: p.raw, conf: p.conf, labels: lines.length, thumb: thumb };
+    });
+  }
+
+  $('#btnRead').addEventListener('click', function () {
+    if (reading) { reading.stop = true; return; }
+    var cells = activeCells();
+    if (!cells.length) return;
+    var st = $('#readStatus'), bar = $('#bar'), btn = this;
+    reading = { stop: false };
+    btn.textContent = 'Arrêter la lecture';
+    st.className = 'status';
+    function say(t) { st.innerHTML = '<span class="spin" aria-hidden="true"></span><span>' + esc(t) + '</span>'; }
+    bar.hidden = false; bar.firstChild.style.width = '0%';
+    var results = [];
+    getEngine(say).then(function (w) {
+      var i = 0;
+      function next() {
+        if (reading.stop || i >= cells.length) return Promise.resolve();
+        say('Lecture des étiquettes : ' + (i + 1) + ' / ' + cells.length);
+        var c = cells[i];
+        return readCell(w, c).then(function (r) {
+          r.c = c; results.push(r); i++;
+          bar.firstChild.style.width = Math.round(100 * i / cells.length) + '%';
+          return next();
+        });
+      }
+      return next();
+    }).then(function () {
+      if (!results.length) { st.className = 'status'; st.textContent = 'Lecture arrêtée.'; return; }
+      var ph = ++state.photoCount;
+      var batch = results.map(function (r) {
+        var nothing = !r.name && !r.apt;
+        return {
+          id: uid(), photo: ph, row: r.c.r + 1, col: r.c.c + 1, name: r.name, apt: r.apt, pub: r.pub, raw: r.raw, thumb: r.thumb,
+          empty: nothing && !r.raw, check: (nothing && !!r.labels) || (!nothing && r.conf < 75)
+        };
+      });
+      state.boxes = state.place === 'start' ? batch.concat(state.boxes) : state.boxes.concat(batch);
+      lastBatch = batch.map(function (b) { return b.id; });
+      lastDeleted = null; $('#listNote').textContent = '';
+      var chk = batch.filter(function (b) { return b.check; }).length;
+      st.className = 'status';
+      st.textContent = plural(batch.length, 'boîte ajoutée', 'boîtes ajoutées') + (chk ? ', ' + chk + ' à vérifier' : '') + (reading.stop ? ' (lecture arrêtée en cours de route)' : '') + '. Contrôlez la liste ci-dessous.';
+      render();
+      var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      try { $('#listSec').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); } catch (e) {}
+    }).catch(function (e) {
+      st.className = 'status err';
+      st.textContent = 'Le moteur de lecture n\'a pas pu démarrer sur cet appareil (' + (e && e.message ? e.message : e) + '). Les boîtes peuvent être saisies à la main à l\'étape 3.';
+    }).then(function () {
+      reading = null; btn.textContent = 'Lire les étiquettes'; bar.hidden = true;
+    });
+  });
+
+
+  function localSaver() {
+    var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    return { save: function (o) {
+      var blob = new Blob([o.data], { type: 'text/csv;charset=utf-8' });
+      var file = null;
+      try { file = new File([blob], o.filename, { type: 'text/csv' }); } catch (e) {}
+      if (ios && file && navigator.canShare && navigator.canShare({ files: [file] })) {
+        return navigator.share({ files: [file], title: o.filename }).catch(function (e) {
+          if (e && e.name === 'AbortError') { var x = new Error('declined'); x.code = 'declined'; throw x; }
+          throw e;
+        });
+      }
+      var url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = o.filename; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 4000);
+      return Promise.resolve();
+    } };
+  }
+  /* ---------- start ---------- */
+  render();
+  (async function () {
+    try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
+    if (!downloads) downloads = localSaver();
+    updateExport();
+  })();
+})();
+</script>
+
+<script>
+(function () {
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+  var box = document.getElementById('pwaInstall'), btn = document.getElementById('pwaInstallBtn'), txt = document.getElementById('pwaInstallText');
+  var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  var deferred = null;
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); deferred = e;
+    if (!standalone) { box.hidden = false; btn.hidden = false; }
+  });
+  btn.addEventListener('click', function () {
+    if (!deferred) return;
+    deferred.prompt();
+    deferred.userChoice.then(function () { deferred = null; box.hidden = true; });
+  });
+  window.addEventListener('appinstalled', function () { box.hidden = true; });
+  if (!standalone && ios) {
+    txt.textContent = "Pour installer l'app : dans Safari, touchez Partager, puis « Sur l'écran d'accueil ».";
+    btn.hidden = true; box.hidden = false;
+  }
+
+  if (!('serviceWorker' in navigator)) return;
+  var upd = document.getElementById('pwaUpdate'), updBtn = document.getElementById('pwaUpdateBtn');
+  var refreshing = false, hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', function () {
+    if (!hadController) { hadController = true; return; }
+    if (refreshing) return; refreshing = true; location.reload();
+  });
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('sw.js').then(function (reg) {
+      function offer(w) {
+        if (!w || !navigator.serviceWorker.controller) return;
+        upd.hidden = false;
+        updBtn.onclick = function () { updBtn.disabled = true; w.postMessage('skipWaiting'); };
+      }
+      if (reg.waiting) offer(reg.waiting);
+      reg.addEventListener('updatefound', function () {
+        var w = reg.installing;
+        w.addEventListener('statechange', function () { if (w.state === 'installed') offer(w); });
+      });
+      setInterval(function () { reg.update().catch(function () {}); }, 60 * 60 * 1000);
+    }).catch(function () {});
+  });
+})();
+</script>
+</body>
+</html>
