@@ -22,6 +22,7 @@
   .pwa-bar p { margin: 0; flex: 1 1 14em; min-width: 0; color: var(--muted); }
   .pwa-bar .btn { flex: 0 0 auto; }
 </style>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Imprim Bal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
@@ -80,7 +81,7 @@
   .lede { margin: 8px 0 0; color: var(--muted); max-width: 54ch; }
   .place { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
   .place > span { font-size: 13px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
-  .place textarea { width: 100%; min-width: 0; height: auto; min-height: 54px; white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; resize: none; overflow: hidden; border: 2px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font: 700 24px/1.15 var(--f-display); letter-spacing: .02em; text-transform: uppercase; }
+  .place textarea { width: 100%; min-width: 0; height: auto; min-height: 54px; padding: 12px; resize: none; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; border: 2px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font: 700 24px/1.15 var(--f-display); letter-spacing: .02em; text-transform: uppercase; }
   .place textarea::placeholder { text-transform: none; font: 400 17px var(--f-body); letter-spacing: 0; color: var(--muted); }
 
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -162,6 +163,17 @@
   textarea.names { height: auto; min-height: 44px; font: 400 16px/1.4 var(--f-body); white-space: pre-wrap; padding: 10px; overflow: hidden; }
   .seg.pub span { height: 40px; font-size: 14px; font-weight: 600; letter-spacing: .03em; white-space: nowrap; }
   .seg.pub input[value="STOP PUB"]:checked + span { background: var(--bad); border-color: var(--bad); color: var(--surface); }
+  select { width: 100%; min-width: 0; height: 44px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font: 400 16px var(--f-body); }
+  select:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+  .pill.ok { background: var(--surface-2); color: var(--accent); }
+  .chip.okb { border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .check { display: flex; gap: 10px; align-items: flex-start; font-size: 15px; }
+  .check input { width: 22px; height: 22px; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+  #reportOut { height: 180px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .chip { min-height: 40px; padding: 6px 12px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); font: 400 14px/1.3 var(--f-body); cursor: pointer; text-align: left; overflow-wrap: anywhere; }
+  .chip b { font-weight: 600; }
+  .chip:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
   .raw { margin: 6px 0 0; font: 400 12px/1.4 var(--f-mono); color: var(--muted); overflow-wrap: anywhere; }
 
   .empty { border: 1px dashed var(--line); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px; }
@@ -180,9 +192,9 @@
 <main class="wrap">
   <header>
     <h1>Imprim Bal</h1>
-    <p class="lede">Photographiez un meuble de boîtes aux lettres : l'app compte les boîtes, lit les étiquettes imprimées et manuscrites sur le téléphone, sans rien envoyer, et exporte un CSV dans l'ordre des boîtes.</p>
-    <label class="place" for="lieu"><span>Lieu de l'Imprim Bal</span>
-      <textarea id="lieu" rows="1" autocomplete="off" enterkeyhint="done" maxlength="200" placeholder="Ex. Résidence Les Pins, 12 allée des Chênes, Bayonne"></textarea>
+    <p class="lede">Photographiez un meuble de boîtes aux lettres : l'app compte les boîtes, lit les étiquettes imprimées et manuscrites sur le téléphone, sans rien envoyer, retient les noms de chaque lieu, et exporte un CSV dans l'ordre des boîtes.</p>
+    <label class="place" for="addr"><span>Lieu de l'Imprim Bal</span>
+      <textarea id="addr" rows="1" maxlength="160" placeholder="Ex. Résidence Les Pins, 12 rue des Lilas, Bayonne" autocomplete="off" enterkeyhint="done"></textarea>
     </label>
   </header>
   <section class="card pwa-bar" id="pwaInstall" hidden aria-label="Installation">
@@ -194,6 +206,16 @@
     <button class="btn primary" type="button" id="pwaUpdateBtn">Mettre à jour</button>
   </section>
 
+
+  <section class="card" aria-labelledby="h-proj">
+    <div class="sec-head"><h2 id="h-proj">Lieux</h2><span class="sec-meta" id="projMeta"></span></div>
+    <label class="field" for="projSel"><span>Lieux enregistrés sur cet appareil (chacun garde ses boîtes et sa mémoire de noms)</span><select id="projSel"></select></label>
+    <div class="btn-row">
+      <button class="btn" type="button" id="btnNewProj">Nouveau lieu</button>
+      <button class="btn quiet" type="button" id="btnDelProj">Supprimer ce lieu</button>
+    </div>
+    <div class="status" id="projStatus" role="status" aria-live="polite"></div>
+  </section>
 
   <section class="card" aria-labelledby="h-photo">
     <div class="sec-head"><span class="step" aria-hidden="true">1</span><h2 id="h-photo">Photo</h2></div>
@@ -262,9 +284,21 @@
     <ul class="list" id="list"></ul>
     <div class="list-tools">
       <button class="btn" type="button" id="btnAdd">Ajouter une boîte</button>
+      <button class="btn" type="button" id="btnConfirmAll" disabled>Tout confirmer</button>
       <button class="btn quiet" type="button" id="btnUndoRead" hidden>Annuler la dernière lecture</button>
       <button class="btn quiet" type="button" id="btnClear" disabled>Tout effacer</button>
     </div>
+  </section>
+
+  <section class="card" aria-labelledby="h-mem">
+    <div class="sec-head"><h2 id="h-mem">Fiabilité et mémoire</h2></div>
+    <p class="status" id="memText"></p>
+    <div class="btn-row">
+      <button class="btn" type="button" id="btnReport" disabled>Copier le rapport de lecture</button>
+      <button class="btn quiet" type="button" id="btnLexClear" disabled>Vider la mémoire de noms</button>
+    </div>
+    <textarea id="reportOut" readonly hidden spellcheck="false" aria-label="Rapport de lecture"></textarea>
+    <div class="status" id="memStatus" role="status" aria-live="polite"></div>
   </section>
 
   <section class="card" aria-labelledby="h-exp">
@@ -276,6 +310,7 @@
         <label><input type="radio" name="sep" value=","><span>Virgule</span></label>
       </div>
     </fieldset>
+    <label class="check" for="addrCol"><input type="checkbox" id="addrCol"><span>Ajouter le lieu en première colonne du CSV</span></label>
     <label class="field" for="csvOut"><span>Aperçu du fichier : une ligne par boîte (ordre de flashage, noms et prénoms, n° d'appartement, pub)</span>
       <textarea id="csvOut" readonly spellcheck="false"></textarea>
     </label>
@@ -286,7 +321,7 @@
     <div class="status" id="expStatus" role="status" aria-live="polite"></div>
   </section>
 
-  <p class="foot">Lecture faite sur l'appareil : détection PaddleOCR v4 et reconnaissance PaddleOCR v6 small (environ 26 Mo chargés à la première lecture) ; lecture renforcée : PaddleOCR v6 medium (38 Mo de plus). Les prénoms manuscrits mal lus sont corrigés à l'aide d'une liste de prénoms. Le lieu et les boîtes restent enregistrés sur cet appareil jusqu'à ce que vous l'effaciez.</p>
+  <p class="foot">Lecture faite sur l'appareil : détection PaddleOCR v4 et reconnaissance PaddleOCR v6 small (environ 26 Mo chargés à la première lecture) ; lecture renforcée : PaddleOCR v6 medium (38 Mo de plus). Les prénoms manuscrits mal lus sont corrigés à l'aide d'une liste de prénoms. Quand une ligne est hésitante, elle est relue trois fois (image redressée, contraste local, noir et blanc) et la lecture majoritaire est retenue ; les autres lectures et les noms voisins dans la liste sont proposés en un appui, sans jamais remplacer votre texte tout seul. Les boîtes, les lieux et la mémoire des noms de chaque lieu restent enregistrés dans ce navigateur, sur cet appareil, jusqu'à ce que vous les effaciez.</p>
 </main>
 
 <script>
@@ -412,7 +447,23 @@ var BalNames = (function () {
     if (letters && letters === letters.toUpperCase()) return canon.toUpperCase();
     return canon;
   }
-  return { exact: exact, closest: closest, styled: styled, key: key, size: Object.keys(BY_KEY).length };
+  /* v10 — Suggestion only (never applied by itself): a common regional surname close to a word read from handwriting. */
+  var SURN = Object.keys(PROTECT).filter(function (k) { return k.length >= 5 && !BY_KEY[k]; });
+  function surname(w) {
+    var k = key(w);
+    if (k.length < 5 || PROTECT[k] || BY_KEY[k]) return null;
+    var lim = Math.min(allowed(k.length), k.length >= 9 ? 1.5 : 1), best = null, bd = 99, tie = false;   // stricter than for first names: a real surname must not be 'corrected'
+    for (var i = 0; i < SURN.length; i++) {
+      var c = SURN[i];
+      if (Math.abs(c.length - k.length) > 1 || (c[0] !== k[0] && !CONF[c[0] + k[0]])) continue;
+      var dd = wlev(k, c);
+      if (dd < bd) { bd = dd; best = c; tie = false; } else if (dd === bd) tie = true;
+    }
+    if (!best || tie || bd > lim) return null;
+    var low = best.charAt(0) + best.slice(1).toLowerCase();
+    return styled(low, w);
+  }
+  return { exact: exact, closest: closest, styled: styled, key: key, surname: surname, dist: wlev, allowed: allowed, size: Object.keys(BY_KEY).length };
 })();
 if (typeof module !== 'undefined') module.exports = BalNames;
 
@@ -1064,8 +1115,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
 <script>
 (function () {
   var C = BalCore;
-  var KEY = 'releve-bal-v3';
-  var state = { lieu: '', boxes: [], sep: ';', place: 'end', cols: 2, rows: 5, photoCount: 0, assist: false };
+  var KEY = 'releve-bal-v4', OLD_KEY = 'releve-bal-v3';
   var photo = null;          // HTMLImageElement of the current photo
   var full = null;           // full-resolution canvas of the photo
   var small = null;          // downscaled ImageData used for grid detection
@@ -1076,50 +1126,134 @@ if (typeof module !== 'undefined') module.exports = BalCore;
 
   function $(s) { return document.querySelector(s); }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function strList(a, n) { return Array.isArray(a) ? a.filter(function (x) { return typeof x === 'string' && x; }).slice(0, n).map(function (x) { return x.slice(0, 200); }) : []; }
+  function sugList(a) { return Array.isArray(a) ? a.filter(function (x) { return x && typeof x.f === 'string' && typeof x.t === 'string' && x.f && x.t; }).slice(0, 3).map(function (x) { return { f: x.f.slice(0, 60), t: x.t.slice(0, 60) }; }) : []; }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
   function plural(n, a, b) { return n + ' ' + (n > 1 ? b : a); }
   function clampInt(v, a, b, d) { v = parseInt(v, 10); return isFinite(v) ? Math.min(b, Math.max(a, v)) : d; }
+
+  /* ---------- projects: one per address / building ---------- */
+  function newState() { return { boxes: [], sep: ';', place: 'end', cols: 2, rows: 5, photoCount: 0, assist: false, addrCol: false }; }
+  function newProject(addr) { return { id: uid(), address: addr || '', created: Date.now(), state: newState(), lex: {} }; }
+  var store = { cur: '', assist: false, projects: [] };
+  function curProject() { return store.projects.find(function (p) { return p.id === store.cur; }) || store.projects[0]; }
 
   /* ---------- persistence (per-viewer convenience) ---------- */
   var saveTimer;
   function persist() {
     clearTimeout(saveTimer);
     saveTimer = setTimeout(function () {
-      try { localStorage.setItem(KEY, JSON.stringify(state)); return; } catch (e) {}
-      try {
-        var lite = JSON.parse(JSON.stringify(state));
-        lite.boxes.forEach(function (b) { delete b.thumb; });
-        localStorage.setItem(KEY, JSON.stringify(lite));
-      } catch (e2) {}
+      // level 0: everything; 1: no photos for the other projects; 2: no photos at all
+      function dump(level) {
+        return JSON.stringify({ v: 4, cur: store.cur, assist: store.assist, projects: store.projects.map(function (p) {
+          var drop = level === 2 || (level === 1 && p.id !== store.cur);
+          var st = drop ? Object.assign({}, p.state, { boxes: p.state.boxes.map(function (b) { return Object.assign({}, b, { thumb: '' }); }) }) : p.state;
+          return { id: p.id, address: p.address, created: p.created, lex: p.lex, state: st };
+        }) });
+      }
+      for (var lv = 0; lv < 3; lv++) { try { localStorage.setItem(KEY, dump(lv)); return; } catch (e) {} }
     }, 250);
   }
-  try {
-    var raw = localStorage.getItem(KEY);
-    if (raw) {
-      var s = JSON.parse(raw);
-      if (s && Array.isArray(s.boxes)) {
-        state.boxes = s.boxes.filter(function (b) { return b && typeof b === 'object'; }).map(function (b) {
-          return { id: b.id || uid(), photo: +b.photo || 0, row: +b.row || 0, col: +b.col || 0, name: String(b.name || '').replace(/\s*\/\s*/g, '\n'), apt: String(b.apt || ''), pub: b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB', check: !!b.check, empty: !!b.empty, raw: String(b.raw || ''), thumb: typeof b.thumb === 'string' ? b.thumb : '' };
-        });
-        state.sep = s.sep === ',' ? ',' : ';';
-        state.lieu = typeof s.lieu === 'string' ? s.lieu.slice(0, 200) : '';
-        state.place = s.place === 'start' ? 'start' : 'end';
-        state.cols = clampInt(s.cols, 1, 12, 2);
-        state.assist = s.assist === true;
-        state.rows = clampInt(s.rows, 1, 20, 5);
-        state.photoCount = +s.photoCount || 0;
-      }
+  function cleanBox(b) {
+    return { id: b.id || uid(), photo: +b.photo || 0, row: +b.row || 0, col: +b.col || 0, name: String(b.name || '').replace(/\s*\/\s*/g, '\n'), apt: String(b.apt || ''), pub: b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB', check: !!b.check, empty: !!b.empty, raw: String(b.raw || ''), thumb: typeof b.thumb === 'string' ? b.thumb : '',
+      alt: strList(b.alt, 2), sug: sugList(b.sug), big: b.big === true ? true : (b.big === false ? false : undefined),
+      orig: typeof b.orig === 'string' ? b.orig : undefined, ok: b.ok === true };
+  }
+  function cleanState(s) {
+    var st = newState();
+    if (!s || typeof s !== 'object') return st;
+    st.boxes = (Array.isArray(s.boxes) ? s.boxes : []).filter(function (b) { return b && typeof b === 'object'; }).map(cleanBox);
+    st.sep = s.sep === ',' ? ',' : ';';
+    st.place = s.place === 'start' ? 'start' : 'end';
+    st.cols = clampInt(s.cols, 1, 12, 2);
+    st.rows = clampInt(s.rows, 1, 20, 5);
+    st.photoCount = +s.photoCount || 0;
+    st.addrCol = s.addrCol === true;
+    return st;
+  }
+  function cleanLex(l) {
+    var out = {};
+    if (!l || typeof l !== 'object') return out;
+    Object.keys(l).slice(0, 800).forEach(function (k) {
+      var e = l[k];
+      if (k.length <= 40 && e && typeof e.w === 'string' && e.w && e.w.length <= 40) out[k] = { w: e.w, n: Math.max(1, Math.min(999, +e.n || 1)) };
+    });
+    return out;
+  }
+  var state = newState();
+  (function load() {
+    var s = null;
+    try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { s = null; }
+    var projects = s && Array.isArray(s.projects) ? s.projects.filter(function (p) { return p && typeof p === 'object'; }).map(function (p) {
+      return { id: String(p.id || uid()), address: String(p.address || '').slice(0, 160), created: +p.created || Date.now(), state: cleanState(p.state), lex: cleanLex(p.lex) };
+    }) : [];
+    if (projects.length) {
+      store.assist = s.assist === true;
+      store.projects = projects;
+      store.cur = projects.some(function (p) { return p.id === s.cur; }) ? s.cur : projects[0].id;
+    } else {
+      // first start of this version: the previous single list becomes the first project
+      var old = null;
+      try { old = JSON.parse(localStorage.getItem(OLD_KEY) || 'null'); } catch (e) { old = null; }
+      var p0 = newProject('');
+      if (old && Array.isArray(old.boxes) && old.boxes.length) { p0.state = cleanState(old); store.assist = old.assist === true; }
+      store.projects = [p0]; store.cur = p0.id;
     }
-  } catch (e) {}
+    state = curProject().state; state.assist = store.assist;
+  })();
+
+  /* ---------- memory of the building: names confirmed by the user ---------- */
+  var SKIPW = /^(M|MR|MME|MMES|MLLE|MLLES|MONSIEUR|MADAME|MADEMOISELLE|ET|DE|DU|DES|LA|LE|LES|EPOUSE|NEE|APPT|APT|PAS|PUB|STOP|OK)$/;
+  function wordsOf(t) { return String(t || '').split(/[\s\n\/]+/).map(function (w) { return w.replace(/^[^A-Za-zÀ-ÿ]+|[^A-Za-zÀ-ÿ]+$/g, ''); }).filter(Boolean); }
+  function learn(b) {
+    var lex = curProject().lex;
+    wordsOf(b.name).forEach(function (w) {
+      var k = BalNames.key(w);
+      if (k.length < 3 || SKIPW.test(k)) return;
+      if (lex[k]) { lex[k].n = Math.min(999, lex[k].n + 1); lex[k].w = w; } else lex[k] = { w: w, n: 1 };
+    });
+    var keys = Object.keys(lex);
+    if (keys.length > 800) keys.sort(function (x, y) { return lex[x].n - lex[y].n; }).slice(0, keys.length - 800).forEach(function (k) { delete lex[k]; });
+  }
+  function confirmBox(b, keepChips) {
+    b.ok = true; b.check = false;
+    if (!keepChips) { b.alt = []; b.sug = []; }
+    learn(b);
+  }
+  function lev(a, b) {
+    var m = a.length, n = b.length, d = [], i, j;
+    for (i = 0; i <= m; i++) { d.push(new Array(n + 1)); d[i][0] = i; }
+    for (j = 0; j <= n; j++) d[0][j] = j;
+    for (i = 1; i <= m; i++) for (j = 1; j <= n; j++) d[i][j] = Math.min(d[i - 1][j] + 1, d[i][j - 1] + 1, d[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    return d[m][n];
+  }
+  /* Reliability of the automatic reading: boxes the user confirmed, compared with what the app had read. */
+  function readingStats(p) {
+    var r = { n: 0, exact: 0, lv: 0, ch: 0, pairs: [] };
+    p.state.boxes.forEach(function (b) {
+      if (!b.ok || typeof b.orig !== 'string') return;
+      var f = b.orig.replace(/\n/g, ' / '), t = String(b.name || '').replace(/\n/g, ' / ');
+      r.n++; r.lv += lev(f, t); r.ch += Math.max(t.length, 1);
+      if (f === t) r.exact++; else r.pairs.push({ f: f, t: t });
+    });
+    return r;
+  }
+  function pct(a, b) { return b ? (Math.round(1000 * a / b) / 10).toString().replace('.', ',') + ' %' : '–'; }
 
   /* ---------- list rendering ---------- */
   var listEl = $('#list');
   function rowHTML(b, i, n) {
     var pos = b.row && b.col ? 'R' + b.row + '·C' + b.col : '';
     if (b.photo && pos) pos += ' · photo ' + b.photo;
-    var pill = b.check ? '<span class="pill warn">À vérifier</span>' : (b.empty && !b.name && !b.apt ? '<span class="pill">Pas d\'étiquette</span>' : '');
+    var pill = b.check ? '<span class="pill warn">À vérifier</span>' : (b.ok ? '<span class="pill ok">Confirmée</span>' : (b.empty && !b.name && !b.apt ? '<span class="pill">Pas d\'étiquette</span>' : ''));
     var thumb = b.thumb ? '<button class="thumb" type="button" data-act="zoom" aria-label="Agrandir ou réduire la photo de la boîte ' + (i + 1) + '"><img alt="Boîte ' + (i + 1) + '" src="' + esc(b.thumb) + '"></button>' : '';
-    return '<li class="row' + (b.thumb ? '' : ' nothumb') + '" data-id="' + esc(b.id) + '">' +
+    var isBig = b.thumb && (b.big === undefined ? !!b.check : b.big);
+    var chips = '';
+    (b.alt || []).forEach(function (a, k) { chips += '<button class="chip" type="button" data-act="alt" data-k="' + k + '">Autre lecture : <b>' + esc(a.replace(/\n/g, ' / ')) + '</b></button>'; });
+    (b.sug || []).forEach(function (g, k) { chips += '<button class="chip sug" type="button" data-act="sug" data-k="' + k + '">«\u00a0' + esc(g.f) + '\u00a0» → <b>' + esc(g.t) + '</b> ?</button>'; });
+    if (!b.ok && (b.name || b.apt)) chips += '<button class="chip okb" type="button" data-act="ok">✓ C\'est bon</button>';
+    if (chips) chips = '<div class="chips" aria-label="Suggestions pour la boîte ' + (i + 1) + '">' + chips + '</div>';
+    return '<li class="row' + (b.thumb ? '' : ' nothumb') + (isBig ? ' big' : '') + '" data-id="' + esc(b.id) + '">' +
       '<div class="row-top"><span class="ord">' + (i + 1) + '</span>' +
       (pos ? '<span class="pos">' + esc(pos) + '</span>' : '') + pill +
       '<div class="acts">' +
@@ -1136,7 +1270,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
       '<div class="seg pub" role="radiogroup" aria-label="Publicité, boîte ' + (i + 1) + '">' +
       '<label><input type="radio" name="pub-' + esc(b.id) + '" data-f="pub" value="STOP PUB"' + (b.pub === 'STOP PUB' ? ' checked' : '') + '><span>STOP PUB</span></label>' +
       '<label><input type="radio" name="pub-' + esc(b.id) + '" data-f="pub" value="OK PUB"' + (b.pub !== 'STOP PUB' ? ' checked' : '') + '><span>OK PUB</span></label></div>' +
-      '</div>' + (b.raw ? '<p class="raw">Texte brut : ' + esc(b.raw) + '</p>' : '') +
+      '</div>' + chips + (b.raw ? '<p class="raw">Texte brut : ' + esc(b.raw) + '</p>' : '') +
       '</div></div></li>';
   }
   function emptyHTML() {
@@ -1144,11 +1278,26 @@ if (typeof module !== 'undefined') module.exports = BalCore;
       '<div class="sample">1  Mme Ferreira de Oliveira Carla  C02  STOP PUB\n1  M Daous Arnaud                  C02  STOP PUB\n1  Mlle Daous Laia                 C02  STOP PUB\n2  VIAL Philippe                   C3-341  OK PUB</div>' +
       '<p>Lisez une photo à l\'étape 2, ou ajoutez les boîtes une à une.</p></li>';
   }
+  function refreshMeta() {
+    var n = state.boxes.length, chk = state.boxes.filter(function (b) { return b.check; }).length;
+    $('#listMeta').textContent = n ? plural(n, 'boîte', 'boîtes') + (chk ? ' · ' + chk + ' à vérifier' : '') : '';
+    var todo = state.boxes.filter(function (b) { return !b.ok && (b.name || b.apt); }).length;
+    $('#btnConfirmAll').disabled = !todo; $('#btnConfirmAll').textContent = todo ? 'Tout confirmer (' + todo + ')' : 'Tout confirmer';
+    renderMem(); renderProjects();
+  }
+  function renderMem() {
+    var p = curProject(), st = readingStats(p), nl = Object.keys(p.lex).length;
+    var t = st.n
+      ? 'Sur ' + plural(st.n, 'boîte confirmée', 'boîtes confirmées') + ' de cet immeuble, ' + st.exact + ' ' + (st.exact > 1 ? 'étaient justes' : 'était juste') + ' dès la lecture (' + pct(st.exact, st.n) + '). Erreurs de lettres sur les noms : ' + pct(st.lv, st.ch) + '.'
+      : 'Appuyez sur « C\'est bon » sur les boîtes que vous avez vérifiées : l\'app mesure alors sa fiabilité sur cet immeuble.';
+    t += ' Mémoire de l\'immeuble : ' + plural(nl, 'nom retenu', 'noms retenus') + ' (ils servent à proposer des corrections aux prochaines lectures).';
+    $('#memText').textContent = t;
+    $('#btnReport').disabled = !st.n; $('#btnLexClear').disabled = !nl;
+  }
   function render() {
     var n = state.boxes.length;
     listEl.innerHTML = n ? state.boxes.map(function (b, i) { return rowHTML(b, i, n); }).join('') : emptyHTML();
-    var chk = state.boxes.filter(function (b) { return b.check; }).length;
-    $('#listMeta').textContent = n ? plural(n, 'boîte', 'boîtes') + (chk ? ' · ' + chk + ' à vérifier' : '') : '';
+    refreshMeta();
     $('#btnClear').disabled = !n;
     $('#btnUndoRead').hidden = !lastBatch.length;
     updateExport();
@@ -1161,36 +1310,34 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     if (s.indexOf(sep) > -1 || s.indexOf('"') > -1 || /[\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
-  var HEAD = ['ordre_flashage', 'noms_prenoms', 'numero_appartement', 'pub'];
+  function csvHead() { return (state.addrCol ? ['lieu'] : []).concat(['ordre_flashage', 'noms_prenoms', 'numero_appartement', 'pub']); }
   function buildCSV() {
     var sep = state.sep;
     // one line per box: flashing order, every name of the box, apartment, advertising choice
-    var rows = [HEAD];
+    var ac = !!state.addrCol, addr = curProject().address.trim();
+    var rows = [csvHead()];
     state.boxes.forEach(function (b, i) {
       var people = String(b.name || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
-      rows.push([i + 1, people.join(' / '), b.apt, b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB']);
+      rows.push((ac ? [addr] : []).concat([i + 1, people.join(' / '), b.apt, b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB']));
     });
     return rows.map(function (r) { return r.map(function (c) { return cell(c, sep); }).join(sep); }).join('\r\n');
   }
   function updateExport() {
     var n = state.boxes.length;
     $('#csvOut').value = n ? buildCSV() : '';
-    $('#csvOut').placeholder = HEAD.join(state.sep);
+    $('#csvOut').placeholder = csvHead().join(state.sep);
     $('#btnSave').disabled = !n || !downloads;
     $('#btnSave').hidden = !downloads;
     $('#btnCopy').disabled = !n;
     $('#expBtns').style.gridTemplateColumns = downloads ? '1fr 1fr' : '1fr';
   }
-  function fileName() {
-    var slug = String(state.lieu || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
-    return 'imprim-bal-' + (slug ? slug + '-' : '') + today() + '.csv';
-  }
+  function slug(a) { var t = String(a || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); return t ? t + '-' : ''; }
   function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
   $('#btnSave').addEventListener('click', function () {
     var st = $('#expStatus'); st.className = 'status';
     if (!downloads || !state.boxes.length) return;
-    downloads.save({ filename: fileName(), data: '﻿' + buildCSV() }).then(function () {
+    downloads.save({ filename: 'imprim-bal-' + slug(curProject().address) + today() + '.csv', data: '﻿' + buildCSV() }).then(function () {
       st.textContent = 'Fichier enregistré.';
     }).catch(function (e) {
       if (e && e.code === 'declined') { st.textContent = 'Enregistrement annulé.'; }
@@ -1216,10 +1363,41 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     if (t.tagName === 'TEXTAREA') t.rows = Math.max(1, t.value.split('\n').length);
     updateExport(); persist();
   });
+  listEl.addEventListener('change', function (ev) {
+    var t = ev.target; if (!t.dataset || t.dataset.f !== 'name') return;
+    var li = t.closest('.row'); if (!li) return;
+    var b = state.boxes.find(function (x) { return x.id === li.dataset.id; }); if (!b || !String(b.name).trim()) return;
+    confirmBox(b, true);                       // the chips stay in place so that a tap on one is not lost
+    var pl = li.querySelector('.pill');
+    if (!pl) { pl = document.createElement('span'); li.querySelector('.row-top').insertBefore(pl, li.querySelector('.acts')); }
+    pl.className = 'pill ok'; pl.textContent = 'Confirmée';
+    refreshMeta(); persist();
+  });
   listEl.addEventListener('click', function (ev) {
     var btn = ev.target.closest('button[data-act]'); if (!btn) return;
     var li = btn.closest('.row');
-    if (btn.dataset.act === 'zoom') { li.classList.toggle('big'); return; }
+    if (btn.dataset.act === 'zoom') {
+      var zb = state.boxes.find(function (x) { return x.id === li.dataset.id; });
+      var now = li.classList.toggle('big'); if (zb) { zb.big = now; persist(); } return;
+    }
+    if (btn.dataset.act === 'ok') {
+      var ob = state.boxes.find(function (x) { return x.id === li.dataset.id; });
+      if (ob) { confirmBox(ob); render(); }
+      return;
+    }
+    if (btn.dataset.act === 'alt' || btn.dataset.act === 'sug') {
+      var sb = state.boxes.find(function (x) { return x.id === li.dataset.id; }); if (!sb) return;
+      var kk = +btn.dataset.k;
+      if (btn.dataset.act === 'alt' && sb.alt[kk]) { sb.name = sb.alt[kk]; sb.alt = []; sb.sug = []; }
+      else if (btn.dataset.act === 'sug' && sb.sug[kk]) {
+        var g = sb.sug[kk];
+        sb.name = sb.name.split('\n').map(function (ln) { return ln.split(' ').map(function (w) { return w === g.f ? g.t : w; }).join(' '); }).join('\n');
+        sb.sug.splice(kk, 1);
+      }
+      render();
+      var ta = document.getElementById('nm-' + sb.id); if (ta) ta.focus();
+      return;
+    }
     var i = state.boxes.findIndex(function (x) { return x.id === li.dataset.id; }); if (i < 0) return;
     var act = btn.dataset.act, note = $('#listNote'); note.className = 'status'; note.textContent = ''; lastDeleted = null;
     if (act === 'up' && i > 0) { var a = state.boxes[i]; state.boxes[i] = state.boxes[i - 1]; state.boxes[i - 1] = a; }
@@ -1238,7 +1416,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     state.boxes.splice(Math.min(lastDeleted.index, state.boxes.length), 0, lastDeleted.box);
     lastDeleted = null; this.textContent = ''; render();
   });
-  function blank() { return { id: uid(), photo: 0, row: 0, col: 0, name: '', apt: '', pub: 'OK PUB', check: false, empty: false, raw: '', thumb: '' }; }
+  function blank() { return { id: uid(), photo: 0, row: 0, col: 0, name: '', apt: '', pub: 'OK PUB', check: false, empty: false, raw: '', thumb: '', alt: [], sug: [] }; }
   $('#btnAdd').addEventListener('click', function () {
     var b = blank(); state.boxes.push(b); render();
     var el = document.getElementById('nm-' + b.id); if (el) el.focus();
@@ -1298,7 +1476,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
   });
   var assistEl = $('#assist');
   assistEl.checked = state.assist;
-  assistEl.addEventListener('change', function () { state.assist = assistEl.checked; persist(); });
+  assistEl.addEventListener('change', function () { state.assist = store.assist = assistEl.checked; persist(); });
   document.querySelectorAll('input[name="place"]').forEach(function (r) {
     r.checked = r.value === state.place;
     r.addEventListener('change', function () { if (r.checked) { state.place = r.value; persist(); } });
@@ -1306,6 +1484,100 @@ if (typeof module !== 'undefined') module.exports = BalCore;
   document.querySelectorAll('input[name="sep"]').forEach(function (r) {
     r.checked = r.value === state.sep;
     r.addEventListener('change', function () { if (r.checked) { state.sep = r.value; updateExport(); persist(); } });
+  });
+
+  /* ---------- immeuble (projects) ---------- */
+  var addrEl = $('#addr'), projSel = $('#projSel'), projStatus = $('#projStatus');
+  function projLabel(p) { return (p.address.trim() || 'Lieu sans nom') + ' · ' + plural(p.state.boxes.length, 'boîte', 'boîtes'); }
+  function renderProjects() {
+    projSel.innerHTML = store.projects.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === store.cur ? ' selected' : '') + '>' + esc(projLabel(p)) + '</option>'; }).join('');
+    $('#projMeta').textContent = plural(store.projects.length, 'lieu', 'lieux');
+    $('#btnDelProj').disabled = false;
+  }
+  function syncControls() {
+    colsEl.value = state.cols; rowsEl.value = state.rows;
+    assistEl.checked = state.assist;
+    document.querySelectorAll('input[name="place"]').forEach(function (r) { r.checked = r.value === state.place; });
+    document.querySelectorAll('input[name="sep"]').forEach(function (r) { r.checked = r.value === state.sep; });
+    $('#addrCol').checked = !!state.addrCol;
+    addrEl.value = curProject().address; fitAddr();
+  }
+  function busy() { projStatus.className = 'status'; projStatus.textContent = 'Attendez la fin de la lecture en cours avant de changer de lieu.'; renderProjects(); }
+  function switchProject(id) {
+    var p = store.projects.find(function (x) { return x.id === id; }); if (!p) return;
+    if (reading) return busy();
+    store.cur = id; state = p.state; state.assist = store.assist;
+    lastBatch = []; lastDeleted = null;
+    $('#listNote').textContent = ''; $('#readStatus').textContent = ''; projStatus.textContent = '';
+    $('#memStatus').textContent = ''; $('#reportOut').hidden = true;
+    syncControls(); render();
+  }
+  function fitAddr() { addrEl.style.height = 'auto'; addrEl.style.height = addrEl.scrollHeight + 4 + 'px'; }
+  addrEl.addEventListener('input', function () {
+    if (/[\r\n]/.test(addrEl.value)) addrEl.value = addrEl.value.replace(/[\r\n]+/g, ' ');
+    curProject().address = addrEl.value.slice(0, 160); fitAddr(); renderProjects(); persist();
+  });
+  addrEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addrEl.blur(); } });
+  window.addEventListener('resize', fitAddr);
+  projSel.addEventListener('change', function () { switchProject(projSel.value); });
+  $('#btnNewProj').addEventListener('click', function () {
+    if (reading) return busy();
+    var cp = curProject();
+    if (!cp.address.trim() && !cp.state.boxes.length) { addrEl.focus(); return; }
+    var p = newProject(''); store.projects.push(p); switchProject(p.id); addrEl.focus();
+    projStatus.textContent = 'Nouveau lieu : saisissez son nom en haut de la page.';
+  });
+  var delTimer;
+  $('#btnDelProj').addEventListener('click', function () {
+    var btn = this;
+    if (reading) return busy();
+    if (btn.dataset.armed) {
+      clearTimeout(delTimer); delete btn.dataset.armed; btn.textContent = 'Supprimer ce lieu';
+      var i = store.projects.findIndex(function (x) { return x.id === store.cur; });
+      store.projects.splice(i, 1);
+      if (!store.projects.length) store.projects.push(newProject(''));
+      switchProject(store.projects[Math.max(0, i - 1)].id);
+      projStatus.textContent = 'Lieu supprimé.';
+    } else {
+      btn.dataset.armed = '1'; btn.textContent = 'Confirmer : tout sera supprimé';
+      delTimer = setTimeout(function () { delete btn.dataset.armed; btn.textContent = 'Supprimer ce lieu'; }, 4000);
+    }
+  });
+  $('#addrCol').addEventListener('change', function () { state.addrCol = this.checked; updateExport(); persist(); });
+
+  var confTimer;
+  $('#btnConfirmAll').addEventListener('click', function () {
+    var btn = this, todo = state.boxes.filter(function (b) { return !b.ok && (b.name || b.apt); });
+    if (btn.dataset.armed) {
+      clearTimeout(confTimer); delete btn.dataset.armed;
+      todo.forEach(function (b) { confirmBox(b); });
+      render();
+    } else {
+      btn.dataset.armed = '1'; btn.textContent = 'Confirmer : ces ' + todo.length + ' boîtes sont justes';
+      confTimer = setTimeout(function () { delete btn.dataset.armed; refreshMeta(); }, 4000);
+    }
+  });
+  $('#btnReport').addEventListener('click', function () {
+    var p = curProject(), st = readingStats(p), ms = $('#memStatus'), out = $('#reportOut');
+    var L = ['Rapport de lecture : ' + (p.address.trim() || 'immeuble sans adresse'),
+      'Boîtes confirmées : ' + st.n + ' ; justes dès la lecture : ' + st.exact + ' (' + pct(st.exact, st.n) + ') ; erreurs de lettres sur les noms : ' + pct(st.lv, st.ch),
+      'Lecture renforcée : ' + (store.assist ? 'oui' : 'non'), '', 'Corrections (lu → corrigé) :'];
+    st.pairs.slice(0, 80).forEach(function (x) { L.push('- ' + (x.f || '(rien)') + ' → ' + (x.t || '(rien)')); });
+    if (st.pairs.length > 80) L.push('… et ' + (st.pairs.length - 80) + ' autres');
+    var text = L.join('\n');
+    function fallback() { out.value = text; out.hidden = false; out.focus(); out.select(); ms.textContent = 'Texte sélectionné. Copiez-le avec le menu de votre téléphone.'; }
+    try { navigator.clipboard.writeText(text).then(function () { ms.textContent = 'Rapport copié.'; }, fallback); } catch (e) { fallback(); }
+  });
+  var lexTimer;
+  $('#btnLexClear').addEventListener('click', function () {
+    var btn = this;
+    if (btn.dataset.armed) {
+      clearTimeout(lexTimer); delete btn.dataset.armed; btn.textContent = 'Vider la mémoire de noms';
+      curProject().lex = {}; $('#memStatus').textContent = 'Mémoire de noms vidée pour cet immeuble.'; renderMem(); persist();
+    } else {
+      btn.dataset.armed = '1'; btn.textContent = 'Confirmer : oublier ces noms';
+      lexTimer = setTimeout(function () { delete btn.dataset.armed; btn.textContent = 'Vider la mémoire de noms'; }, 4000);
+    }
   });
 
   /* ---------- photo ---------- */
@@ -1562,7 +1834,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
           assistLoaded: !!r.assist,
           read: function (imgData) {
             var buf = imgData.data.buffer;
-            return call({ type: 'read', buf: buf, w: imgData.width, h: imgData.height, assist: state.assist && engine.assistLoaded }, [buf]).then(function (m) { return m.lines; });
+            return call({ type: 'read', buf: buf, w: imgData.width, h: imgData.height, assist: state.assist && engine.assistLoaded, enhance: true }, [buf]).then(function (m) { return m.lines; });
           }
         };
         return engine;
@@ -1579,8 +1851,8 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     return c;
   }
   function thumbOf(c) {
-    var k = 320 / c.width, t = document.createElement('canvas');
-    t.width = 320; t.height = Math.max(1, Math.round(c.height * k));
+    var k = 480 / c.width, t = document.createElement('canvas');
+    t.width = 480; t.height = Math.max(1, Math.round(c.height * k));
     t.getContext('2d').drawImage(c, 0, 0, t.width, t.height);
     return t.toDataURL('image/jpeg', 0.72);
   }
@@ -1592,8 +1864,49 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     var cc = cropCanvas(full, cx, cy, cw, ch, k1);
     var thumb = thumbOf(cc);
     return w.read(cc.getContext('2d').getImageData(0, 0, cc.width, cc.height)).then(function (lines) {
-      var p = C.parseLabel(lines);
-      return { name: p.names.join('\n'), apt: p.apt, pub: p.pub, raw: p.raw, conf: p.conf, labels: lines.length, thumb: thumb };
+      var p = C.parseLabel(lines), base = p.names.join('\n'), alt = [];
+      // another reading of one hesitant line at a time, shown as a one-tap alternative
+      if (!p.panel) lines.forEach(function (ln, k) {
+        (ln.alts || []).forEach(function (a) {
+          if (alt.length >= 2) return;
+          var copy = lines.map(function (l, q) { return q === k ? { text: a, conf: 60, agree: 0 } : { text: l.text, conf: l.conf, agree: l.agree }; });
+          var n2 = C.parseLabel(copy).names.join('\n');
+          if (n2 && n2 !== base && alt.indexOf(n2) < 0) alt.push(n2);
+        });
+      });
+      return { name: base, apt: p.apt, pub: p.pub, raw: p.raw, conf: p.conf, labels: lines.length, thumb: thumb, alt: alt,
+        doubt: lines.some(function (l) { return l.alts && l.alts.length && l.conf < 80; }) };
+    });
+  }
+
+  /* B3 + B4: suggestions only, written in b.sug, never applied to the reading.
+     A word of a new box is compared with the words of the other boxes of the list (a family or a name that came out
+     right elsewhere) then with the common regional surnames. */
+  function suggest(batch, existing) {
+    var N = window.BalNames || (typeof BalNames !== 'undefined' ? BalNames : null); if (!N || !N.dist) return;
+    var lex = curProject().lex, pool = {}, order = [];
+    function add(w, n) { var k = N.key(w); if (k.length < 4) return; if (!pool[k]) { pool[k] = { w: w, n: 0 }; order.push(k); } pool[k].n += n; }
+    // candidates: words of the boxes already in the list and of the building's memory (never the new boxes themselves)
+    existing.forEach(function (b) { wordsOf(b.name).forEach(function (w) { add(w, 1); }); });
+    Object.keys(lex).forEach(function (k) { add(lex[k].w, lex[k].n); });
+    var inBatch = {};
+    batch.forEach(function (b) { wordsOf(b.name).forEach(function (w) { var k = N.key(w); inBatch[k] = (inBatch[k] || 0) + 1; }); });
+    batch.forEach(function (b) {
+      var out = [], seen = {};
+      wordsOf(b.name).forEach(function (w) {
+        var k = N.key(w); if (k.length < 4 || seen[k]) return; seen[k] = 1;
+        if (pool[k] || inBatch[k] > 1) return;                       // this spelling is known or repeated: fine
+        var lim = N.allowed(k.length), best = null, bd = 99, tie = false;
+        order.forEach(function (o) {
+          if (Math.abs(o.length - k.length) > 1) return;
+          var d = N.dist(k, o);
+          if (d < bd) { bd = d; best = o; tie = false; } else if (d === bd) tie = true;
+        });
+        var to = best && !tie && bd <= lim && bd > 0 ? N.styled(pool[best].w, w) : null;
+        if (!to && k.length >= 5) to = N.surname(w);
+        if (to && to !== w && out.length < 3) out.push({ f: w, t: to });
+      });
+      b.sug = out;
     });
   }
 
@@ -1628,15 +1941,17 @@ if (typeof module !== 'undefined') module.exports = BalCore;
         var nothing = !r.name && !r.apt;
         return {
           id: uid(), photo: ph, row: r.c.r + 1, col: r.c.c + 1, name: r.name, apt: r.apt, pub: r.pub, raw: r.raw, thumb: r.thumb,
-          empty: nothing && !r.raw, check: (nothing && !!r.labels) || (!nothing && r.conf < 75)
+          empty: nothing && !r.raw, check: (nothing && !!r.labels) || (!nothing && (r.conf < 75 || r.doubt)),
+          alt: nothing ? [] : r.alt, sug: [], orig: r.name, ok: false
         };
       });
+      suggest(batch, state.boxes);
       state.boxes = state.place === 'start' ? batch.concat(state.boxes) : state.boxes.concat(batch);
       lastBatch = batch.map(function (b) { return b.id; });
       lastDeleted = null; $('#listNote').textContent = '';
       var chk = batch.filter(function (b) { return b.check; }).length;
       st.className = 'status';
-      st.textContent = plural(batch.length, 'boîte ajoutée', 'boîtes ajoutées') + (chk ? ', ' + chk + ' à vérifier' : '') + (reading.stop ? ' (lecture arrêtée en cours de route)' : '') + '. Contrôlez la liste ci-dessous.';
+      st.textContent = plural(batch.length, 'boîte ajoutée', 'boîtes ajoutées') + ' au lieu « ' + (curProject().address.trim() || 'sans nom') + ' »' + (chk ? ', ' + chk + ' à vérifier' : '') + (reading.stop ? ' (lecture arrêtée en cours de route)' : '') + '. Contrôlez la liste ci-dessous.';
       render();
       var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
       try { $('#listSec').scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' }); } catch (e) {}
@@ -1647,18 +1962,6 @@ if (typeof module !== 'undefined') module.exports = BalCore;
       reading = null; btn.textContent = 'Lire les étiquettes'; bar.hidden = true;
     });
   });
-
-  /* ---------- place ---------- */
-  var lieuEl = $('#lieu');
-  function fitLieu() { lieuEl.style.height = 'auto'; lieuEl.style.height = lieuEl.scrollHeight + 4 + 'px'; }
-  lieuEl.value = state.lieu;
-  lieuEl.addEventListener('input', function () {
-    if (/[\r\n]/.test(lieuEl.value)) lieuEl.value = lieuEl.value.replace(/[\r\n]+/g, ' ');
-    state.lieu = lieuEl.value.slice(0, 200); fitLieu(); persist();
-  });
-  lieuEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lieuEl.blur(); } });
-  window.addEventListener('resize', fitLieu);
-  requestAnimationFrame(fitLieu);
 
 
   function localSaver() {
@@ -1680,6 +1983,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     } };
   }
   /* ---------- start ---------- */
+  syncControls();
   render();
   (async function () {
     try { downloads = window.claude && window.claude.use ? await window.claude.use('downloads') : null; } catch (e) { downloads = null; }
@@ -1688,6 +1992,8 @@ if (typeof module !== 'undefined') module.exports = BalCore;
   })();
 })();
 </script>
+
+</body></html>
 
 <script>
 (function () {
