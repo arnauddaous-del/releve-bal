@@ -14,7 +14,7 @@ Toute modification se fait ici, puis se pousse sur `main` ; Pages republie tout 
 
 ## Règles voulues par Arnaud
 - Toute la lecture se fait sur le téléphone ; aucune photo n'est envoyée.
-- Un « lieu » par relevé, affiché en titre en haut de page ; chaque lieu garde ses boîtes et sa mémoire de noms.
+- En haut de page : « Numéro de tournée » puis « Lieu de l'Imprim Bal » (en titre). Chaque lieu garde sa tournée, ses boîtes et sa mémoire de noms ; un nouveau lieu reprend la tournée en cours. Le fichier CSV s'appelle imprim-bal-tournee-<n>-<lieu>-<date>.csv.
 - CSV : une ligne par boîte, `ordre_flashage;noms_prenoms;numero_appartement;pub` (noms séparés par « / »,
   pub = `STOP PUB` pour toute forme de refus de publicité, y compris en basque et lectures déformées, sinon `OK PUB`).
   Option décochée par défaut : colonne `lieu` en premier.

@@ -82,6 +82,9 @@
   .place { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
   .place > span { font-size: 13px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
   .place textarea { width: 100%; min-width: 0; height: auto; min-height: 54px; padding: 12px; resize: none; overflow: hidden; white-space: pre-wrap; overflow-wrap: anywhere; border: 2px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font: 700 24px/1.15 var(--f-display); letter-spacing: .02em; text-transform: uppercase; }
+  .place input[type="text"] { max-width: 14em; height: 48px; padding: 0 12px; border-width: 2px; font: 700 22px/1 var(--f-display); letter-spacing: .04em; text-transform: uppercase; font-variant-numeric: tabular-nums; }
+  .place input[type="text"]::placeholder { text-transform: none; font: 400 17px var(--f-body); letter-spacing: 0; color: var(--muted); }
+  .place + .place { margin-top: 10px; }
   .place textarea::placeholder { text-transform: none; font: 400 17px var(--f-body); letter-spacing: 0; color: var(--muted); }
 
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -193,6 +196,9 @@
   <header>
     <h1>Imprim Bal</h1>
     <p class="lede">Photographiez un meuble de boîtes aux lettres : l'app compte les boîtes, lit les étiquettes imprimées et manuscrites sur le téléphone, sans rien envoyer, retient les noms de chaque lieu, et exporte un CSV dans l'ordre des boîtes.</p>
+    <label class="place" for="tournee"><span>Numéro de tournée</span>
+      <input type="text" id="tournee" maxlength="20" placeholder="Ex. 12" autocomplete="off" autocapitalize="characters" enterkeyhint="next">
+    </label>
     <label class="place" for="addr"><span>Lieu de l'Imprim Bal</span>
       <textarea id="addr" rows="1" maxlength="160" placeholder="Ex. Résidence Les Pins, 12 rue des Lilas, Bayonne" autocomplete="off" enterkeyhint="done"></textarea>
     </label>
@@ -1134,8 +1140,9 @@ if (typeof module !== 'undefined') module.exports = BalCore;
 
   /* ---------- projects: one per address / building ---------- */
   function newState() { return { boxes: [], sep: ';', place: 'end', cols: 2, rows: 5, photoCount: 0, assist: false, addrCol: false }; }
-  function newProject(addr) { return { id: uid(), address: addr || '', created: Date.now(), state: newState(), lex: {} }; }
+  function newProject(addr) { return { id: uid(), tournee: curTournee(), address: addr || '', created: Date.now(), state: newState(), lex: {} }; }
   var store = { cur: '', assist: false, projects: [] };
+  function curTournee() { var p = store.projects.find(function (x) { return x.id === store.cur; }); return p ? p.tournee || '' : ''; }
   function curProject() { return store.projects.find(function (p) { return p.id === store.cur; }) || store.projects[0]; }
 
   /* ---------- persistence (per-viewer convenience) ---------- */
@@ -1148,7 +1155,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
         return JSON.stringify({ v: 4, cur: store.cur, assist: store.assist, projects: store.projects.map(function (p) {
           var drop = level === 2 || (level === 1 && p.id !== store.cur);
           var st = drop ? Object.assign({}, p.state, { boxes: p.state.boxes.map(function (b) { return Object.assign({}, b, { thumb: '' }); }) }) : p.state;
-          return { id: p.id, address: p.address, created: p.created, lex: p.lex, state: st };
+          return { id: p.id, tournee: p.tournee || '', address: p.address, created: p.created, lex: p.lex, state: st };
         }) });
       }
       for (var lv = 0; lv < 3; lv++) { try { localStorage.setItem(KEY, dump(lv)); return; } catch (e) {} }
@@ -1185,7 +1192,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     var s = null;
     try { s = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { s = null; }
     var projects = s && Array.isArray(s.projects) ? s.projects.filter(function (p) { return p && typeof p === 'object'; }).map(function (p) {
-      return { id: String(p.id || uid()), address: String(p.address || '').slice(0, 160), created: +p.created || Date.now(), state: cleanState(p.state), lex: cleanLex(p.lex) };
+      return { id: String(p.id || uid()), tournee: String(p.tournee || '').slice(0, 20), address: String(p.address || '').slice(0, 160), created: +p.created || Date.now(), state: cleanState(p.state), lex: cleanLex(p.lex) };
     }) : [];
     if (projects.length) {
       store.assist = s.assist === true;
@@ -1337,7 +1344,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
   $('#btnSave').addEventListener('click', function () {
     var st = $('#expStatus'); st.className = 'status';
     if (!downloads || !state.boxes.length) return;
-    downloads.save({ filename: 'imprim-bal-' + slug(curProject().address) + today() + '.csv', data: '﻿' + buildCSV() }).then(function () {
+    downloads.save({ filename: 'imprim-bal-' + (curProject().tournee.trim() ? 'tournee-' + slug(curProject().tournee) : '') + slug(curProject().address) + today() + '.csv', data: '﻿' + buildCSV() }).then(function () {
       st.textContent = 'Fichier enregistré.';
     }).catch(function (e) {
       if (e && e.code === 'declined') { st.textContent = 'Enregistrement annulé.'; }
@@ -1488,7 +1495,10 @@ if (typeof module !== 'undefined') module.exports = BalCore;
 
   /* ---------- immeuble (projects) ---------- */
   var addrEl = $('#addr'), projSel = $('#projSel'), projStatus = $('#projStatus');
-  function projLabel(p) { return (p.address.trim() || 'Lieu sans nom') + ' · ' + plural(p.state.boxes.length, 'boîte', 'boîtes'); }
+  var tourEl = $('#tournee');
+  tourEl.addEventListener('input', function () { curProject().tournee = tourEl.value.slice(0, 20); renderProjects(); persist(); });
+  tourEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); addrEl.focus(); } });
+  function projLabel(p) { return (p.tournee.trim() ? 'T' + p.tournee.trim() + ' · ' : '') + (p.address.trim() || 'Lieu sans nom') + ' · ' + plural(p.state.boxes.length, 'boîte', 'boîtes'); }
   function renderProjects() {
     projSel.innerHTML = store.projects.map(function (p) { return '<option value="' + esc(p.id) + '"' + (p.id === store.cur ? ' selected' : '') + '>' + esc(projLabel(p)) + '</option>'; }).join('');
     $('#projMeta').textContent = plural(store.projects.length, 'lieu', 'lieux');
@@ -1501,6 +1511,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     document.querySelectorAll('input[name="sep"]').forEach(function (r) { r.checked = r.value === state.sep; });
     $('#addrCol').checked = !!state.addrCol;
     addrEl.value = curProject().address; fitAddr();
+    tourEl.value = curProject().tournee;
   }
   function busy() { projStatus.className = 'status'; projStatus.textContent = 'Attendez la fin de la lecture en cours avant de changer de lieu.'; renderProjects(); }
   function switchProject(id) {
@@ -1559,7 +1570,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
   });
   $('#btnReport').addEventListener('click', function () {
     var p = curProject(), st = readingStats(p), ms = $('#memStatus'), out = $('#reportOut');
-    var L = ['Rapport de lecture : ' + (p.address.trim() || 'immeuble sans adresse'),
+    var L = ['Rapport de lecture : ' + (p.tournee.trim() ? 'tournée ' + p.tournee.trim() + ', ' : '') + (p.address.trim() || 'immeuble sans adresse'),
       'Boîtes confirmées : ' + st.n + ' ; justes dès la lecture : ' + st.exact + ' (' + pct(st.exact, st.n) + ') ; erreurs de lettres sur les noms : ' + pct(st.lv, st.ch),
       'Lecture renforcée : ' + (store.assist ? 'oui' : 'non'), '', 'Corrections (lu → corrigé) :'];
     st.pairs.slice(0, 80).forEach(function (x) { L.push('- ' + (x.f || '(rien)') + ' → ' + (x.t || '(rien)')); });
