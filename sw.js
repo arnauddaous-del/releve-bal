@@ -1,5 +1,5 @@
-/* Relevé BAL service worker. App shell cached per version; reading models cached once. */
-var APP = 'releve-bal-app-a70e3ed70c';
+/* Imprim Bal service worker. App shell cached per version; reading models cached once. */
+var APP = 'releve-bal-app-38851cc103';
 var MODELS = 'releve-bal-models-a92b252c7d';
 var FONTS = 'releve-bal-fonts';
 var SHELL = ["./", "index.html", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/apple-touch-icon.png", "icons/favicon-48.png", "ocr/ort.wasm.min.js", "ocr/bal-worker.js"];

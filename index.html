@@ -11,7 +11,7 @@
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Relevé BAL">
+<meta name="apple-mobile-web-app-title" content="Imprim Bal">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
   :root { color-scheme: light; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
@@ -22,7 +22,7 @@
   .pwa-bar p { margin: 0; flex: 1 1 14em; min-width: 0; color: var(--muted); }
   .pwa-bar .btn { flex: 0 0 auto; }
 </style>
-<title>Relevé BAL</title>
+<title>Imprim Bal</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
@@ -78,6 +78,10 @@
   h1 { font-size: 44px; line-height: 1; font-weight: 700; }
   h2 { font-size: 24px; line-height: 1.1; font-weight: 700; }
   .lede { margin: 8px 0 0; color: var(--muted); max-width: 54ch; }
+  .place { margin-top: 14px; display: flex; flex-direction: column; gap: 4px; }
+  .place > span { font-size: 13px; color: var(--muted); letter-spacing: .06em; text-transform: uppercase; }
+  .place textarea { width: 100%; min-width: 0; height: auto; min-height: 54px; white-space: pre-wrap; overflow-wrap: anywhere; padding: 12px; resize: none; overflow: hidden; border: 2px solid var(--line); border-radius: 8px; background: var(--field); color: var(--ink); font: 700 24px/1.15 var(--f-display); letter-spacing: .02em; text-transform: uppercase; }
+  .place textarea::placeholder { text-transform: none; font: 400 17px var(--f-body); letter-spacing: 0; color: var(--muted); }
 
   .card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
   .sec-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
@@ -175,11 +179,14 @@
 <body>
 <main class="wrap">
   <header>
-    <h1>Relevé BAL</h1>
+    <h1>Imprim Bal</h1>
     <p class="lede">Photographiez un meuble de boîtes aux lettres : l'app compte les boîtes, lit les étiquettes imprimées et manuscrites sur le téléphone, sans rien envoyer, et exporte un CSV dans l'ordre des boîtes.</p>
+    <label class="place" for="lieu"><span>Lieu de l'Imprim Bal</span>
+      <textarea id="lieu" rows="1" autocomplete="off" enterkeyhint="done" maxlength="200" placeholder="Ex. Résidence Les Pins, 12 allée des Chênes, Bayonne"></textarea>
+    </label>
   </header>
   <section class="card pwa-bar" id="pwaInstall" hidden aria-label="Installation">
-    <p id="pwaInstallText">Installez Relevé BAL sur ce téléphone : icône sur l'écran d'accueil, plein écran, modèles gardés hors ligne.</p>
+    <p id="pwaInstallText">Installez Imprim Bal sur ce téléphone : icône sur l'écran d'accueil, plein écran, modèles gardés hors ligne.</p>
     <button class="btn primary" type="button" id="pwaInstallBtn">Installer l'app</button>
   </section>
   <section class="card pwa-bar" id="pwaUpdate" hidden aria-label="Mise à jour">
@@ -269,7 +276,7 @@
         <label><input type="radio" name="sep" value=","><span>Virgule</span></label>
       </div>
     </fieldset>
-    <label class="field" for="csvOut"><span>Aperçu du fichier : une ligne par destinataire (ordre, destinataire, n° d'appartement, pub)</span>
+    <label class="field" for="csvOut"><span>Aperçu du fichier : une ligne par boîte (ordre de flashage, noms et prénoms, n° d'appartement, pub)</span>
       <textarea id="csvOut" readonly spellcheck="false"></textarea>
     </label>
     <div class="btn-row" id="expBtns">
@@ -279,7 +286,7 @@
     <div class="status" id="expStatus" role="status" aria-live="polite"></div>
   </section>
 
-  <p class="foot">Lecture faite sur l'appareil : détection PaddleOCR v4 et reconnaissance PaddleOCR v6 small (environ 26 Mo chargés à la première lecture) ; lecture renforcée : PaddleOCR v6 medium (38 Mo de plus). Les prénoms manuscrits mal lus sont corrigés à l'aide d'une liste de prénoms. Le relevé reste enregistré dans ce navigateur jusqu'à ce que vous l'effaciez.</p>
+  <p class="foot">Lecture faite sur l'appareil : détection PaddleOCR v4 et reconnaissance PaddleOCR v6 small (environ 26 Mo chargés à la première lecture) ; lecture renforcée : PaddleOCR v6 medium (38 Mo de plus). Les prénoms manuscrits mal lus sont corrigés à l'aide d'une liste de prénoms. Le lieu et les boîtes restent enregistrés sur cet appareil jusqu'à ce que vous l'effaciez.</p>
 </main>
 
 <script>
@@ -1058,7 +1065,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
 (function () {
   var C = BalCore;
   var KEY = 'releve-bal-v3';
-  var state = { boxes: [], sep: ';', place: 'end', cols: 2, rows: 5, photoCount: 0, assist: false };
+  var state = { lieu: '', boxes: [], sep: ';', place: 'end', cols: 2, rows: 5, photoCount: 0, assist: false };
   var photo = null;          // HTMLImageElement of the current photo
   var full = null;           // full-resolution canvas of the photo
   var small = null;          // downscaled ImageData used for grid detection
@@ -1095,6 +1102,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
           return { id: b.id || uid(), photo: +b.photo || 0, row: +b.row || 0, col: +b.col || 0, name: String(b.name || '').replace(/\s*\/\s*/g, '\n'), apt: String(b.apt || ''), pub: b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB', check: !!b.check, empty: !!b.empty, raw: String(b.raw || ''), thumb: typeof b.thumb === 'string' ? b.thumb : '' };
         });
         state.sep = s.sep === ',' ? ',' : ';';
+        state.lieu = typeof s.lieu === 'string' ? s.lieu.slice(0, 200) : '';
         state.place = s.place === 'start' ? 'start' : 'end';
         state.cols = clampInt(s.cols, 1, 12, 2);
         state.assist = s.assist === true;
@@ -1153,32 +1161,36 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     if (s.indexOf(sep) > -1 || s.indexOf('"') > -1 || /[\r\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"';
     return s;
   }
+  var HEAD = ['ordre_flashage', 'noms_prenoms', 'numero_appartement', 'pub'];
   function buildCSV() {
     var sep = state.sep;
-    // one line per recipient; the box number, apartment and advertising choice repeat on each line
-    var rows = [['ordre', 'destinataire', 'numero_appartement', 'pub']];
+    // one line per box: flashing order, every name of the box, apartment, advertising choice
+    var rows = [HEAD];
     state.boxes.forEach(function (b, i) {
       var people = String(b.name || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
-      if (!people.length) people = [''];
-      people.forEach(function (n) { rows.push([i + 1, n, b.apt, b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB']); });
+      rows.push([i + 1, people.join(' / '), b.apt, b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB']);
     });
     return rows.map(function (r) { return r.map(function (c) { return cell(c, sep); }).join(sep); }).join('\r\n');
   }
   function updateExport() {
     var n = state.boxes.length;
     $('#csvOut').value = n ? buildCSV() : '';
-    $('#csvOut').placeholder = ['ordre', 'destinataire', 'numero_appartement', 'pub'].join(state.sep);
+    $('#csvOut').placeholder = HEAD.join(state.sep);
     $('#btnSave').disabled = !n || !downloads;
     $('#btnSave').hidden = !downloads;
     $('#btnCopy').disabled = !n;
     $('#expBtns').style.gridTemplateColumns = downloads ? '1fr 1fr' : '1fr';
+  }
+  function fileName() {
+    var slug = String(state.lieu || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+    return 'imprim-bal-' + (slug ? slug + '-' : '') + today() + '.csv';
   }
   function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
   $('#btnSave').addEventListener('click', function () {
     var st = $('#expStatus'); st.className = 'status';
     if (!downloads || !state.boxes.length) return;
-    downloads.save({ filename: 'releve-bal-' + today() + '.csv', data: '﻿' + buildCSV() }).then(function () {
+    downloads.save({ filename: fileName(), data: '﻿' + buildCSV() }).then(function () {
       st.textContent = 'Fichier enregistré.';
     }).catch(function (e) {
       if (e && e.code === 'declined') { st.textContent = 'Enregistrement annulé.'; }
@@ -1635,6 +1647,18 @@ if (typeof module !== 'undefined') module.exports = BalCore;
       reading = null; btn.textContent = 'Lire les étiquettes'; bar.hidden = true;
     });
   });
+
+  /* ---------- place ---------- */
+  var lieuEl = $('#lieu');
+  function fitLieu() { lieuEl.style.height = 'auto'; lieuEl.style.height = lieuEl.scrollHeight + 4 + 'px'; }
+  lieuEl.value = state.lieu;
+  lieuEl.addEventListener('input', function () {
+    if (/[\r\n]/.test(lieuEl.value)) lieuEl.value = lieuEl.value.replace(/[\r\n]+/g, ' ');
+    state.lieu = lieuEl.value.slice(0, 200); fitLieu(); persist();
+  });
+  lieuEl.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); lieuEl.blur(); } });
+  window.addEventListener('resize', fitLieu);
+  requestAnimationFrame(fitLieu);
 
 
   function localSaver() {

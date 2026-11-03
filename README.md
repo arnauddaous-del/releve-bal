@@ -1,6 +1,6 @@
-# Relevé BAL
+# Imprim Bal
 
-Application web installable pour relever les noms et numéros d'appartement écrits sur les boîtes aux lettres, dans l'ordre des boîtes, et les exporter en CSV (`ordre;destinataire;numero_appartement;pub`).
+Application web installable pour relever les noms et numéros d'appartement écrits sur les boîtes aux lettres, dans l'ordre des boîtes, et les exporter en CSV (`ordre_flashage;noms_prenoms;numero_appartement;pub`, une ligne par boîte).
 
 Toute la lecture se fait sur le téléphone : aucune photo n'est envoyée.
 

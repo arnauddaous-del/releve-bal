@@ -1,6 +1,6 @@
 {
-  "name": "Relevé BAL",
-  "short_name": "Relevé BAL",
+  "name": "Imprim Bal",
+  "short_name": "Imprim Bal",
   "description": "Relevé des noms et numéros d'appartement sur les boîtes aux lettres, lu sur le téléphone, export CSV.",
   "lang": "fr",
   "id": "./",
