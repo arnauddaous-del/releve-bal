@@ -163,6 +163,7 @@
   .thumb img { display: block; width: 100%; height: auto; }
   .fields { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .fields .lbl { font-size: 12px; color: var(--muted); letter-spacing: .02em; margin-bottom: -4px; }
+  textarea.names::placeholder { font-style: italic; }
   textarea.names { height: auto; min-height: 44px; font: 400 16px/1.4 var(--f-body); white-space: pre-wrap; padding: 10px; overflow: hidden; }
   .seg.pub span { height: 40px; font-size: 14px; font-weight: 600; letter-spacing: .03em; white-space: nowrap; }
   .seg.pub input[value="STOP PUB"]:checked + span { background: var(--bad); border-color: var(--bad); color: var(--surface); }
@@ -316,12 +317,13 @@
         <label><input type="radio" name="sep" value=","><span>Virgule</span></label>
       </div>
     </fieldset>
-    <label class="check" for="addrCol"><input type="checkbox" id="addrCol"><span>Ajouter le lieu en première colonne du CSV</span></label>
-    <label class="field" for="csvOut"><span>Aperçu du fichier : en titre la tournée et le lieu, puis une ligne par boîte (ordre de flashage, noms et prénoms, n° d'appartement, pub)</span>
+    <label class="check" for="addrCol"><input type="checkbox" id="addrCol"><span>Ajouter le lieu en première colonne du fichier</span></label>
+    <label class="field" for="csvOut"><span>Aperçu du fichier : en titre la tournée, le lieu et le nombre de PRE, puis une ligne par boîte (ordre de flashage, noms et prénoms ou « BAL Sans Nom », n° d'appartement, pub)</span>
       <textarea id="csvOut" readonly spellcheck="false"></textarea>
     </label>
+    <button class="btn primary wide" type="button" id="btnXlsx" hidden disabled>Enregistrer en Excel (.xlsx)</button>
     <div class="btn-row" id="expBtns">
-      <button class="btn primary" type="button" id="btnSave" disabled>Enregistrer le CSV</button>
+      <button class="btn" type="button" id="btnSave" disabled>Enregistrer le CSV</button>
       <button class="btn" type="button" id="btnCopy" disabled>Copier</button>
     </div>
     <div class="status" id="expStatus" role="status" aria-live="polite"></div>
@@ -1272,7 +1274,7 @@ if (typeof module !== 'undefined') module.exports = BalCore;
       '<div class="row-body">' + thumb + '<div>' +
       '<div class="fields">' +
       '<label class="lbl" for="nm-' + esc(b.id) + '">Destinataires, un par ligne</label>' +
-      '<textarea class="names" id="nm-' + esc(b.id) + '" data-f="name" rows="' + Math.max(1, b.name.split('\n').length) + '" placeholder="Mme DUPONT Marie" spellcheck="false">' + esc(b.name) + '</textarea>' +
+      '<textarea class="names" id="nm-' + esc(b.id) + '" data-f="name" rows="' + Math.max(1, b.name.split('\n').length) + '" placeholder="BAL Sans Nom" spellcheck="false">' + esc(b.name) + '</textarea>' +
       '<input type="text" id="ap-' + esc(b.id) + '" data-f="apt" value="' + esc(b.apt) + '" placeholder="N° appartement" aria-label="Numéro d\'appartement, boîte ' + (i + 1) + '" autocomplete="off">' +
       '<div class="seg pub" role="radiogroup" aria-label="Publicité, boîte ' + (i + 1) + '">' +
       '<label><input type="radio" name="pub-' + esc(b.id) + '" data-f="pub" value="STOP PUB"' + (b.pub === 'STOP PUB' ? ' checked' : '') + '><span>STOP PUB</span></label>' +
@@ -1318,21 +1320,107 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     return s;
   }
   function csvHead() { return (state.addrCol ? ['lieu'] : []).concat(['ordre_flashage', 'noms_prenoms', 'numero_appartement', 'pub']); }
-  function buildCSV() {
-    var sep = state.sep;
-    // one line per box: flashing order, every name of the box, apartment, advertising choice
-    var ac = !!state.addrCol, addr = curProject().address.trim();
-    // title lines for Excel: round number and place, then a blank line, then the table
-    var tour = String(curProject().tournee || '').trim(), rows = [];
-    if (tour) rows.push(['Tournée : ' + tour]);
-    if (addr) rows.push(['Lieu : ' + addr]);
-    if (rows.length) rows.push(['']);
-    rows.push(csvHead());
-    state.boxes.forEach(function (b, i) {
+  var SANS_NOM = 'BAL Sans Nom';
+  /* What is exported: title lines (round, place, number of PRE = every box, empty ones included), then one line per box:
+     flashing order, every name of the box (or « BAL Sans Nom »), apartment, advertising choice. */
+  function exportData() {
+    var ac = !!state.addrCol, addr = curProject().address.trim(), tour = String(curProject().tournee || '').trim(), title = [];
+    if (tour) title.push('Tournée : ' + tour);
+    if (addr) title.push('Lieu : ' + addr);
+    title.push('Nombre de PRE : ' + state.boxes.length);
+    var rows = state.boxes.map(function (b, i) {
       var people = String(b.name || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
-      rows.push((ac ? [addr] : []).concat([i + 1, people.join(' / '), b.apt, b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB']));
+      return { none: !people.length, cells: (ac ? [addr] : []).concat([i + 1, people.length ? people.join(' / ') : SANS_NOM, b.apt, b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB']) };
     });
+    return { title: title, head: csvHead(), rows: rows, ac: ac };
+  }
+  function buildCSV() {
+    var sep = state.sep, d = exportData(), rows = d.title.map(function (t) { return [t]; });
+    rows.push(['']); rows.push(d.head);
+    d.rows.forEach(function (r) { rows.push(r.cells); });
     return rows.map(function (r) { return r.map(function (c) { return cell(c, sep); }).join(sep); }).join('\r\n');
+  }
+
+  /* ---------- Excel (.xlsx) written by hand: an uncompressed zip of SpreadsheetML parts ---------- */
+  var CRC_T = null;
+  function crc32(u8) {
+    if (!CRC_T) { CRC_T = new Uint32Array(256); for (var n = 0; n < 256; n++) { var c = n; for (var k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1; CRC_T[n] = c >>> 0; } }
+    var x = 0xFFFFFFFF; for (var i = 0; i < u8.length; i++) x = CRC_T[(x ^ u8[i]) & 255] ^ (x >>> 8);
+    return (x ^ 0xFFFFFFFF) >>> 0;
+  }
+  function zipStore(files, type) {
+    var enc = new TextEncoder(), parts = [], central = [], off = 0, csize = 0;
+    files.forEach(function (f) {
+      var name = enc.encode(f.name), data = enc.encode(f.data), crc = crc32(data);
+      var h = new DataView(new ArrayBuffer(30));
+      h.setUint32(0, 0x04034b50, true); h.setUint16(4, 20, true); h.setUint16(6, 0x0800, true); h.setUint16(12, 0x21, true);
+      h.setUint32(14, crc, true); h.setUint32(18, data.length, true); h.setUint32(22, data.length, true); h.setUint16(26, name.length, true);
+      parts.push(new Uint8Array(h.buffer), name, data);
+      var c = new DataView(new ArrayBuffer(46));
+      c.setUint32(0, 0x02014b50, true); c.setUint16(4, 20, true); c.setUint16(6, 20, true); c.setUint16(8, 0x0800, true); c.setUint16(14, 0x21, true);
+      c.setUint32(16, crc, true); c.setUint32(20, data.length, true); c.setUint32(24, data.length, true); c.setUint16(28, name.length, true); c.setUint32(42, off, true);
+      central.push(new Uint8Array(c.buffer), name); csize += 46 + name.length;
+      off += 30 + name.length + data.length;
+    });
+    var e = new DataView(new ArrayBuffer(22));
+    e.setUint32(0, 0x06054b50, true); e.setUint16(8, files.length, true); e.setUint16(10, files.length, true); e.setUint32(12, csize, true); e.setUint32(16, off, true);
+    return new Blob(parts.concat(central, [new Uint8Array(e.buffer)]), { type: type });
+  }
+  function xmlEsc(v) { return String(v == null ? '' : v).replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function buildXLSX() {
+    var d = exportData(), rows = [], r = 0, ncol = d.head.length;
+    function col(i) { return String.fromCharCode(65 + i); }
+    function str(i, v, st) { return '<c r="' + col(i) + r + '" t="inlineStr" s="' + st + '"><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>'; }
+    function row(cells) { rows.push('<row r="' + r + '">' + cells.join('') + '</row>'); }
+    d.title.forEach(function (t, k) { r++; row([str(0, t, k < d.title.length - 1 ? 1 : 2)]); });
+    r++;                                                    // blank line under the title
+    r++; var headRow = r; row(d.head.map(function (h, i) { return str(i, h, 3); }));
+    var oi = d.ac ? 1 : 0;
+    d.rows.forEach(function (x) {
+      r++;
+      row(x.cells.map(function (v, i) {
+        if (i === oi) return '<c r="' + col(i) + r + '" s="5"><v>' + (+v) + '</v></c>';
+        return str(i, v, i === oi + 1 && x.none ? 4 : 0);
+      }));
+    });
+    var widths = (d.ac ? [32] : []).concat([15, 46, 21, 12]);
+    var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetPr><pageSetUpPr fitToPage="1"/></sheetPr>' +
+      '<sheetViews><sheetView workbookViewId="0"><pane ySplit="' + headRow + '" topLeftCell="A' + (headRow + 1) + '" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>' +
+      '<cols>' + widths.map(function (w, i) { return '<col min="' + (i + 1) + '" max="' + (i + 1) + '" width="' + w + '" customWidth="1"/>'; }).join('') + '</cols>' +
+      '<sheetData>' + rows.join('') + '</sheetData>' +
+      '<autoFilter ref="A' + headRow + ':' + col(ncol - 1) + Math.max(headRow, r) + '"/>' +
+      '<pageMargins left="0.5" right="0.5" top="0.6" bottom="0.6" header="0.3" footer="0.3"/><pageSetup paperSize="9" orientation="portrait" fitToWidth="1" fitToHeight="0"/></worksheet>';
+    var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<fonts count="4"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font>' +
+      '<font><i/><sz val="11"/><color rgb="FF566573"/><name val="Calibri"/></font><font><b/><sz val="14"/><name val="Calibri"/></font></fonts>' +
+      '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>' +
+      '<fill><patternFill patternType="solid"><fgColor rgb="FFE3EBEF"/><bgColor indexed="64"/></patternFill></fill></fills>' +
+      '<borders count="2"><border><left/><right/><top/><bottom/><diagonal/></border><border><left/><right/><top/><bottom style="thin"><color rgb="FF14202B"/></bottom><diagonal/></border></borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="6"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+      '<xf numFmtId="0" fontId="3" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+      '<xf numFmtId="0" fontId="1" fillId="2" borderId="1" xfId="0" applyFont="1" applyFill="1" applyBorder="1"/>' +
+      '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+      '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="left"/></xf></cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>';
+    var R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships', P = 'http://schemas.openxmlformats.org/package/2006/relationships';
+    return zipStore([
+      { name: '[Content_Types].xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>' +
+        '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+        '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+        '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>' },
+      { name: '_rels/.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' + P + '"><Relationship Id="rId1" Type="' + R + '/officeDocument" Target="xl/workbook.xml"/></Relationships>' },
+      { name: 'xl/workbook.xml', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="' + R + '">' +
+        '<sheets><sheet name="Imprim Bal" sheetId="1" r:id="rId1"/></sheets><definedNames><definedName name="_xlnm._FilterDatabase" localSheetId="0" hidden="1">\'Imprim Bal\'!$A$' + headRow + ':$' + col(ncol - 1) + '$' + Math.max(headRow, r) + '</definedName></definedNames></workbook>' },
+      { name: 'xl/_rels/workbook.xml.rels', data: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="' + P + '">' +
+        '<Relationship Id="rId1" Type="' + R + '/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="' + R + '/styles" Target="styles.xml"/></Relationships>' },
+      { name: 'xl/styles.xml', data: styles },
+      { name: 'xl/worksheets/sheet1.xml', data: sheet }
+    ], 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
   }
   function updateExport() {
     var n = state.boxes.length;
@@ -1341,15 +1429,30 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     $('#btnSave').disabled = !n || !downloads;
     $('#btnSave').hidden = !downloads;
     $('#btnCopy').disabled = !n;
+    $('#btnXlsx').hidden = !(downloads && downloads.local);
+    $('#btnXlsx').disabled = !n;
     $('#expBtns').style.gridTemplateColumns = downloads ? '1fr 1fr' : '1fr';
   }
   function slug(a) { var t = String(a || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); return t ? t + '-' : ''; }
   function today() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); }
 
+  function baseName() { return 'imprim-bal-' + (curProject().tournee.trim() ? 'tournee-' + slug(curProject().tournee) : '') + slug(curProject().address) + today(); }
+  $('#btnXlsx').addEventListener('click', function () {
+    var st = $('#expStatus'); st.className = 'status';
+    if (!downloads || !downloads.local || !state.boxes.length) return;
+    var blob;
+    try { blob = buildXLSX(); } catch (e) { st.className = 'status err'; st.textContent = 'Le fichier Excel n\'a pas pu être créé. Utilisez « Enregistrer le CSV ».'; return; }
+    downloads.save({ filename: baseName() + '.xlsx', blob: blob }).then(function () {
+      st.textContent = 'Fichier Excel enregistré.';
+    }).catch(function (e) {
+      if (e && e.code === 'declined') { st.textContent = 'Enregistrement annulé.'; }
+      else { st.className = 'status err'; st.textContent = 'Enregistrement impossible ici. Essayez « Enregistrer le CSV ».'; }
+    });
+  });
   $('#btnSave').addEventListener('click', function () {
     var st = $('#expStatus'); st.className = 'status';
     if (!downloads || !state.boxes.length) return;
-    downloads.save({ filename: 'imprim-bal-' + (curProject().tournee.trim() ? 'tournee-' + slug(curProject().tournee) : '') + slug(curProject().address) + today() + '.csv', data: '﻿' + buildCSV() }).then(function () {
+    downloads.save({ filename: baseName() + '.csv', data: '﻿' + buildCSV() }).then(function () {
       st.textContent = 'Fichier enregistré.';
     }).catch(function (e) {
       if (e && e.code === 'declined') { st.textContent = 'Enregistrement annulé.'; }
@@ -1982,10 +2085,10 @@ if (typeof module !== 'undefined') module.exports = BalCore;
 
   function localSaver() {
     var ios = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-    return { save: function (o) {
-      var blob = new Blob([o.data], { type: 'text/csv;charset=utf-8' });
+    return { local: true, save: function (o) {
+      var blob = o.blob || new Blob([o.data], { type: 'text/csv;charset=utf-8' });
       var file = null;
-      try { file = new File([blob], o.filename, { type: 'text/csv' }); } catch (e) {}
+      try { file = new File([blob], o.filename, { type: (blob.type || 'text/csv').split(';')[0] }); } catch (e) {}
       if (ios && file && navigator.canShare && navigator.canShare({ files: [file] })) {
         return navigator.share({ files: [file], title: o.filename }).catch(function (e) {
           if (e && e.name === 'AbortError') { var x = new Error('declined'); x.code = 'declined'; throw x; }

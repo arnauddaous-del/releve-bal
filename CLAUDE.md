@@ -15,8 +15,11 @@ Toute modification se fait ici, puis se pousse sur `main` ; Pages republie tout 
 ## Règles voulues par Arnaud
 - Toute la lecture se fait sur le téléphone ; aucune photo n'est envoyée.
 - En haut de page : « Numéro de tournée » puis « Lieu de l'Imprim Bal » (en titre). Chaque lieu garde sa tournée, ses boîtes et sa mémoire de noms ; un nouveau lieu reprend la tournée en cours. Le fichier CSV s'appelle imprim-bal-tournee-<n>-<lieu>-<date>.csv.
-- CSV : en titre « Tournée : n » et « Lieu : … » (si remplis), une ligne vide, puis une ligne par boîte, `ordre_flashage;noms_prenoms;numero_appartement;pub` (noms séparés par « / »,
-  pub = `STOP PUB` pour toute forme de refus de publicité, y compris en basque et lectures déformées, sinon `OK PUB`).
+- Export : bouton « Enregistrer en Excel (.xlsx) » (fichier écrit à la main dans la page, sans bibliothèque :
+  zip non compressé + SpreadsheetML) et « Enregistrer le CSV ». Les deux ont en titre « Tournée : n », « Lieu : … »
+  (si remplis) et « Nombre de PRE : N » (toutes les boîtes, vides comprises), une ligne vide, puis une ligne par boîte
+  `ordre_flashage;noms_prenoms;numero_appartement;pub` (noms séparés par « / » ; boîte sans nom = « BAL Sans Nom »,
+  en italique dans l'Excel ; pub = `STOP PUB` pour toute forme de refus de publicité, sinon `OK PUB`).
   Option décochée par défaut : colonne `lieu` en premier.
 - Textes de l'interface en français.
 
