@@ -317,7 +317,7 @@
       </div>
     </fieldset>
     <label class="check" for="addrCol"><input type="checkbox" id="addrCol"><span>Ajouter le lieu en première colonne du CSV</span></label>
-    <label class="field" for="csvOut"><span>Aperçu du fichier : une ligne par boîte (ordre de flashage, noms et prénoms, n° d'appartement, pub)</span>
+    <label class="field" for="csvOut"><span>Aperçu du fichier : en titre la tournée et le lieu, puis une ligne par boîte (ordre de flashage, noms et prénoms, n° d'appartement, pub)</span>
       <textarea id="csvOut" readonly spellcheck="false"></textarea>
     </label>
     <div class="btn-row" id="expBtns">
@@ -1322,7 +1322,12 @@ if (typeof module !== 'undefined') module.exports = BalCore;
     var sep = state.sep;
     // one line per box: flashing order, every name of the box, apartment, advertising choice
     var ac = !!state.addrCol, addr = curProject().address.trim();
-    var rows = [csvHead()];
+    // title lines for Excel: round number and place, then a blank line, then the table
+    var tour = String(curProject().tournee || '').trim(), rows = [];
+    if (tour) rows.push(['Tournée : ' + tour]);
+    if (addr) rows.push(['Lieu : ' + addr]);
+    if (rows.length) rows.push(['']);
+    rows.push(csvHead());
     state.boxes.forEach(function (b, i) {
       var people = String(b.name || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean);
       rows.push((ac ? [addr] : []).concat([i + 1, people.join(' / '), b.apt, b.pub === 'STOP PUB' ? 'STOP PUB' : 'OK PUB']));
