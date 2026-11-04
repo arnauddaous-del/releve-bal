@@ -21,6 +21,8 @@ Toute modification se fait ici, puis se pousse sur `main` ; Pages republie tout 
   `ordre_flashage;noms_prenoms;numero_appartement;pub` (noms séparés par « / » ; boîte sans nom = « BAL Sans Nom »,
   en italique dans l'Excel ; pub = `STOP PUB` pour toute forme de refus de publicité, sinon `OK PUB`).
   Option décochée par défaut : colonne `lieu` en premier.
+- Étape 2 : « Sens de lecture des boîtes » horizontal (rangée par rangée, par défaut) ou vertical (colonne par colonne) ;
+  gardé par lieu ; change les numéros sur la photo et l'ordre de flashage.
 - Textes de l'interface en français.
 
 ## Tester
