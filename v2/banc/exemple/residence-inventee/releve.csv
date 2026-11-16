@@ -1,0 +1,17 @@
+﻿Tournée : 12
+Lieu : Résidence inventée, 1 rue de l'Exemple
+Nombre de PRE : 12
+
+ordre_flashage;noms_prenoms;numero_appartement;pub
+1;MARTINEAU Paul;11;OK PUB
+2;Mme GARNIER Lucie;12;STOP PUB
+3;M FONTAINE Hugo / Mme FONTAINE Clara;13;OK PUB
+4;ROUSSEL Emma;21;STOP PUB
+5;BAL Sans Nom;;OK PUB
+6;LEMOINE Nicolas / LEMOINE Sophie;23;OK PUB
+7;Mlle BRUNET Manon;31;OK PUB
+8;CHEVALIER Louis;32;STOP PUB
+9;M et Mme PERRIN Julien;33;OK PUB
+10;GAUTHIER Alice;41;OK PUB
+11;MARCHAND Thomas / DUVAL Camille;42;OK PUB
+12;Mme RENARD Juliette;43;STOP PUB

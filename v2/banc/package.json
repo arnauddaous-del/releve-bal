@@ -1,0 +1,19 @@
+{
+  "name": "imprim-bal-banc",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Banc d'essai d'Imprim Bal : lit un dossier de photos et compare au relevé corrigé. Outil de développement, hors de l'app.",
+  "type": "module",
+  "scripts": {
+    "banc": "node banc.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "dependencies": {
+    "@napi-rs/canvas": "^0.1.65",
+    "onnxruntime-node": "1.17.3",
+    "sharp": "^0.33.5"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.65.1"
+  }
+}

@@ -13,8 +13,10 @@ Adresse : https://arnauddaous-del.github.io/releve-bal/v2/ (toujours avec la bar
 ## Déroulé voulu par Arnaud, avec un arrêt pour test après chaque étape
 1. Tag, squelette `v2/` installable, reprise des lieux de la V1. **Fait le 16/11/2026.**
 2. Banc d'essai `v2/banc/` (Node + onnxruntime-node, mêmes fonctions que le Worker) et mesure de la V1 telle quelle.
-   Demander alors à Arnaud ses 20 à 30 blocs corrigés (photo + CSV). Ces photos portent de vrais noms :
-   dossier local dans `.gitignore`, jamais committées, jamais publiées.
+   **Banc construit le 16/11/2026 ; la mesure de la V1 attend les 20 à 30 blocs corrigés d'Arnaud** (photo + CSV,
+   à envoyer en ZIP). Ces photos portent de vrais noms : `v2/banc/donnees/` est dans `.gitignore`, jamais committé.
+   À leur arrivée : les ranger dans `donnees/`, `node banc.mjs --planches`, classer manuscrit / imprimé dans
+   `ecriture.csv` (à partir des planches), puis `node banc.mjs --config v1,v1-renforcee --enregistrer`.
 3. Moteur de lecture, étape par étape, chacune gardée seulement si elle améliore les chiffres : redressement et
    variantes d'image, détection PP-OCRv6, ensemble de modèles (PP-OCRv6 medium + un modèle manuscrit français),
    décodage guidé par dictionnaire. Tableau `v2/banc/RESULTATS.md`.
@@ -42,6 +44,8 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
 - `sw.js` : hors ligne. **Après chaque modification dans `v2/` : `python3 v2/outils/maj_sw.py`** (il réécrit la liste
   des fichiers et la version du cache dans `v2/sw.js`).
 - `outils/icones.py` : redessine les icônes. `outils/verif_cohabitation.py` : voir plus haut.
+- `banc/` : le banc d'essai (voir plus bas). Outil de développement, hors de l'app : rien de `banc/` n'est dans la
+  liste du service worker.
 
 ## Stockage (séparé de la V1)
 - `localStorage`, clés préfixées `imprimbal2:` : `imprimbal2:lieux` (liste des identifiants), `imprimbal2:lieu:<id>`
@@ -73,6 +77,25 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
   pas les lieux de la V1 installée. La reprise fonctionne sur Android et dans un même navigateur.
 - Corriger la première visite ou la barre finale demanderait de modifier `sw.js` de la V1, donc l'accord d'Arnaud ;
   et les téléphones garderaient l'ancien service worker V1 jusqu'à leur prochaine mise à jour.
+
+## Banc d'essai (`v2/banc/`, mode d'emploi dans son `README.md`)
+- `banc.mjs` lit les blocs de `donnees/` (photo + CSV corrigé exporté par la V1) avec une ou plusieurs configurations
+  et écrit les totaux dans `RESULTATS.md` (`--enregistrer`). Le détail boîte par boîte reste dans `rapports/` (ignoré).
+- **La V1 n'est pas copiée** : `v1/charger.mjs` charge `BalNames`, `BalCore` (bloc `<script>` de `index.html`) et
+  `BalPaddle` (`ocr/bal-worker.js`) depuis leurs fichiers ; `moteurs/v1.mjs` refait les étapes de la page (`loadPhoto`,
+  `autoGrid`, `readCell`, mise en liste) avec onnxruntime-node 1.17.3 et les modèles de `ocr/`.
+- **Réduction d'image de Chrome** (`image.mjs`) : avec `imageSmoothingQuality = 'high'`, Chrome agrandit en bicubique
+  mais réduit en mipmaps trilinéaires avec un biais d'un demi-niveau (réduction de moins de 30 % : bilinéaire simple).
+  Reproduit à 3 niveaux de gris près ; sans cela la grille et les lectures divergeaient (55 % de boîtes identiques).
+- **Fidélité** (`parite-v1.mjs`, vraie page V1 dans Chrome contre le banc) : voir `RESULTATS.md`. Le 16/11/2026, sur
+  9 photos du projet et 126 boîtes : même grille 9/9, 96,8 % de boîtes identiques.
+- **La lecture de la V1 est très sensible au cadrage des cases** : quelques pixels d'écart sur une ligne de la grille
+  changent le texte lu. À garder en tête pour l'étape 4.1 (redressement, découpe des étiquettes).
+- Vérité terrain : boîtes appariées dans l'ordre ; si le nombre diffère, appariement au mieux et boîte sans vis-à-vis
+  comptée fausse. Le sens de lecture (réglage de l'utilisateur) est celui qui colle au relevé, sauf `bloc.json`.
+- Les photos envoyées comme images par l'app Claude arrivent souvent réduites (1200 x 1600) : demander des ZIP.
+- Temps sur la machine du banc (1 fil) : environ 0,5 s par boîte ; la même lecture dans Chrome (WebAssembly) : 1,3 à 1,8 s.
+- Une étape de la V2 = un moteur de plus dans `moteurs/`, inscrit dans `CONFIGS` de `banc.mjs`.
 
 ## Publier
 `python3 v2/outils/maj_sw.py`, `python3 v2/outils/verif_cohabitation.py`, test local
