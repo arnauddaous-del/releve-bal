@@ -30,3 +30,8 @@ Servir le dossier en local (`python3 -m http.server`) et ouvrir `http://localhos
 fonctionne sur localhost. Vérifier une lecture, l'export CSV, puis une lecture hors ligne.
 
 Une ancienne copie de la page existe aussi en artifact Claude (« Imprim Bal ») ; elle renvoie vers cette version.
+
+## Imprim Bal 2 (dossier `v2/`)
+Une nouvelle version se construit dans `v2/`, à côté de celle-ci. **Tant que ce chantier dure, aucun fichier de la V1
+ne doit être modifié** (`index.html`, `sw.js`, `manifest.webmanifest`, `ocr/*`, `icons/*`) sans l'accord d'Arnaud.
+Tout ce qui concerne la V2 est décrit dans `v2/CLAUDE.md`. État de référence de la V1 : commit `8e6de26` (tag `v1-finale`).

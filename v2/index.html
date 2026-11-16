@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Imprim Bal 2</title>
+<meta name="description" content="Relevé des boîtes aux lettres : photo, lecture sur le téléphone, export Excel et CSV.">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="48x48" href="icons/favicon-48.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Imprim Bal 2">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+  <main id="ecran-accueil" class="ecran" aria-labelledby="t-accueil">
+    <header class="tete">
+      <h1 id="t-accueil" class="grand-titre">Imprim Bal</h1>
+      <button class="rond" id="btn-reglages" type="button" aria-label="Réglages">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+          <circle cx="12" cy="12" r="8.3" stroke-width="3" stroke-dasharray="3.26 3.26"/>
+          <circle cx="12" cy="12" r="6.2" stroke-width="1.8"/>
+          <circle cx="12" cy="12" r="2.4" stroke-width="1.8"/>
+        </svg>
+      </button>
+    </header>
+    <div id="zone-reprise"></div>
+    <ul id="liste-lieux" class="cartes" aria-label="Lieux"></ul>
+    <p id="accueil-vide" class="vide" hidden><b>Aucun lieu</b>Touchez « Nouveau relevé » pour commencer.</p>
+  </main>
+  <div class="barre-bas" id="barre-accueil">
+    <button class="principal" id="btn-nouveau" type="button">Nouveau relevé</button>
+  </div>
+
+  <main id="ecran-lieu" class="ecran" aria-labelledby="lieu-nom" hidden>
+    <div class="nav">
+      <button class="retour" id="btn-retour" type="button">
+        <svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 2 2 10l8 8"/></svg>
+        Lieux
+      </button>
+      <button class="rond" id="btn-actions" type="button" aria-label="Autres actions">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </button>
+    </div>
+    <h1 class="grand-titre" id="lieu-nom"></h1>
+    <p class="sous-titre" id="lieu-meta"></p>
+    <ul id="liste-boites" class="groupe" aria-label="Boîtes"></ul>
+    <p id="lieu-vide" class="vide" hidden><b>Aucune boîte</b></p>
+    <p class="note" id="lieu-note">La photo, la lecture et le partage arrivent aux prochaines étapes. D'ici là, continuez vos relevés dans la V1.</p>
+  </main>
+</div>
+
+<div id="voile" class="voile" hidden></div>
+<div id="feuille" class="feuille" role="dialog" aria-modal="true" tabindex="-1" hidden><div id="feuille-corps"></div></div>
+<div id="bandeau" class="bandeau" role="status" aria-live="polite" hidden></div>
+
+<noscript><p style="padding:24px">Imprim Bal a besoin de JavaScript pour fonctionner.</p></noscript>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
