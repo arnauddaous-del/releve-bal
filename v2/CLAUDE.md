@@ -28,7 +28,11 @@ Adresse : https://arnauddaous-del.github.io/releve-bal/v2/ (toujours avec la bar
    faute d'accès depuis cet environnement : modèle manuscrit français (Hugging Face bloqué), détection PP-OCRv6,
    redressement par étiquette. Chiffres et détail : `banc/RESULTATS.md` et `banc/etapes.md`.
 4. Interface en trois écrans : Accueil, Photo (caméra dans l'app, aide à la prise de vue), Résultat (boîtes à vérifier
-   en premier, « Partager » en Excel ou CSV).
+   en premier, « Partager » en Excel ou CSV). **Fait le 17/11/2026** (Arnaud a demandé d'y passer avant de valider
+   les chiffres de l'étape 3). Moteur branché : configuration `v2-bloc-prenoms` du banc (sans liste de noms de
+   famille, pas encore publiable). Dans Chrome, lecture identique au banc pour 41 boîtes sur 42 (3 photos), environ
+   1,1 s par boîte sur un ordinateur : loin du budget de 10 s pour 24 boîtes sur un téléphone (piste : WebAssembly
+   multi-fils, qui demande l'isolation cross-origin via le service worker, ou WebGPU).
 5. « Lecture experte » optionnelle (petit modèle vision-langage en WebGPU, seulement pour les boîtes douteuses).
 6. Finitions : accessibilité, page confidentialité, `v2/BASCULE.md`, ce fichier, `v2/LICENCES.md`.
 
@@ -42,9 +46,23 @@ transitions de 200 à 300 ms, feuilles qui montent du bas, cibles ≥ 44 px, « 
 confirmation, vibration légère sur validation et suppression. Textes courts, en français.
 
 ## Structure (pas d'étape de build, modules ES servis tels quels)
-- `index.html`, `css/app.css` : les écrans. Pour l'instant : accueil (lieux en cartes, « Nouveau relevé », réglages)
-  et un lieu en lecture seule.
-- `js/app.js` : interface, navigation (`#/lieu/<id>`, la touche Retour ferme les feuilles), mises à jour.
+- `index.html`, `css/app.css` : les écrans. Accueil (lieux en cartes), Résultat (`#ecran-lieu` : boîtes à vérifier en
+  grand, puis l'ordre de flashage avec poignée pour glisser), Photo (`#ecran-photo`, plein écran sombre : visée,
+  puis grille, puis progression de la lecture), feuilles (nouveau relevé, correction d'une boîte, partage, réglages).
+- `js/app.js` : interface et navigation (`#/lieu/<id>`, `#/lieu/<id>/photo` ; la touche Retour ferme les feuilles et
+  l'écran Photo), mémoire de noms du lieu (comme la V1), mises à jour.
+- `js/camera.js` : getUserMedia (caméra arrière), ImageCapture.takePhoto quand il existe (pleine définition, Android),
+  sinon l'image de l'aperçu (iPhone) ; aide en direct : lumière, immobilité, inclinaison (portrait, Android), nombre de
+  boîtes vues (même comptage que la lecture) dessiné sur l'aperçu ; lampe si le téléphone la propose.
+- `js/grille.js` : chargement de la photo (4200 px / 700 px, comme la V1), comptage auto, éditeur de grille repris de
+  la V1 (+/− colonnes et rangées, lignes à glisser, case touchée = ignorée), numéros selon le sens de lecture.
+- `js/moteur-client.js` : téléchargement des modèles avec progression, Worker, découpe des cases (même découpe que la
+  V1), miniatures, assemblage des boîtes (`bloc.mjs`, « à vérifier », autres lectures).
+- `js/lecteur.js` : le Worker (classique : `importScripts` d'onnxruntime-web 1.17.3, puis `import()` des modules).
+- `js/export.js` : CSV et Excel, repris tels quels de la V1 ; partage par la feuille du téléphone, sinon téléchargement.
+- `modeles/` : copie des modèles de la V1 (`ocr/`), pour que la V2 ne dépende pas des fichiers de la V1. Cache à part
+  `imprimbal2-modeles-1` (rempli au premier usage, gardé d'une version de l'app à l'autre ; un modèle qui change
+  doit changer de nom). `noms-famille.txt` y sera lu s'il existe (pas encore : voir plus bas).
 - `js/stockage.js` : tout le stockage de la V2.
 - `js/import-v1.js` : « Reprendre mes lieux de la V1 ».
 - `sw.js` : hors ligne. **Après chaque modification dans `v2/` : `python3 v2/outils/maj_sw.py`** (il réécrit la liste
@@ -120,5 +138,6 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
   essayer vite des règles. Les temps mesurés avec `--memoire` sont faux : mesurer sans pour le tableau.
 
 ## Publier
-`python3 v2/outils/maj_sw.py`, `python3 v2/outils/verif_cohabitation.py`, test local
+`python3 v2/outils/maj_sw.py`, `python3 v2/outils/verif_cohabitation.py`, `python3 v2/outils/verif_parcours.py`
+(parcours complet dans Chrome avec une caméra simulée et la photo inventée du banc : 21 vérifications), test local
 (`python3 -m http.server` depuis la racine, puis `http://localhost:8000/v2/`), puis commit et push sur `main`.

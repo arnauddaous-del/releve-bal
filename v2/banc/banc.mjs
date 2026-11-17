@@ -38,6 +38,7 @@ export const CONFIGS = {
   'v2-noms': { titre: 'V2 + dictionnaire des noms de famille', creer: o => creerV2({ lexique: 'noms', fils: o.fils, memoire: o.memoire }) },
   'v2-regles': { titre: 'V2 + règles (panneaux, autocollants, initiales)', creer: o => creerV2({ lexique: 'noms', regles: { v2: true }, fils: o.fils, memoire: o.memoire }) },
   'v2-bloc': { titre: 'V2 + recoupements du bloc (place de l’étiquette, forme des numéros)', creer: o => creerV2({ lexique: 'noms', bloc: true, fils: o.fils, memoire: o.memoire }) },
+  'v2-bloc-prenoms': { titre: 'V2 publiable aujourd’hui (prénoms seulement, sans liste de noms de famille)', creer: o => creerV2({ lexique: 'prenoms', bloc: true, fils: o.fils, memoire: o.memoire }) },
   'v2-bloc-fort': { titre: 'V2 complète + deuxième modèle sur les lignes hésitantes', creer: o => creerV2({ lexique: 'noms', bloc: true, fort: 'faible', fils: o.fils, memoire: o.memoire }) },
   'v2-fort': { titre: 'V2 + deuxième modèle sur les lignes hésitantes', creer: o => creerV2({ lexique: 'noms', fort: 'faible', fils: o.fils, memoire: o.memoire }) },
   'v2-fort-tout': { titre: 'V2 + deuxième modèle sur toutes les lignes', creer: o => creerV2({ lexique: 'noms', fort: 'tout', fils: o.fils, memoire: o.memoire }) }

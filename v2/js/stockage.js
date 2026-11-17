@@ -28,14 +28,15 @@ export function lireEtat(nom, defaut) { return lire(PREFIXE + nom, defaut); }
 export function ecrireEtat(nom, valeur) { ecrire(PREFIXE + nom, valeur); }
 
 /* ---------- réglages ---------- */
-const REGLAGES_DEFAUT = { addrCol: false, sep: ';', lastTournee: '' };
+const REGLAGES_DEFAUT = { addrCol: false, sep: ';', lastTournee: '', fort: false };
 export function reglagesExistent() { return localStorage.getItem(K_REGLAGES) != null; }
 export function lireReglages() {
   const r = lire(K_REGLAGES, {}) || {};
   return {
     addrCol: r.addrCol === true,
     sep: r.sep === ',' ? ',' : ';',
-    lastTournee: typeof r.lastTournee === 'string' ? r.lastTournee.slice(0, 20) : ''
+    lastTournee: typeof r.lastTournee === 'string' ? r.lastTournee.slice(0, 20) : '',
+    fort: r.fort === true          // lecture renforcée : deuxième modèle, 38 Mo de plus
   };
 }
 export function ecrireReglages(partiel) { ecrire(K_REGLAGES, Object.assign({}, REGLAGES_DEFAUT, lireReglages(), partiel)); }
@@ -117,6 +118,10 @@ function supprimerSi(garder) {
     const r = s.index('lieu').openKeyCursor();
     r.onsuccess = () => { const c = r.result; if (!c) return; if (!garder(c.key)) s.delete(c.primaryKey); c.continue(); };
   });
+}
+export function supprimerImages(ids) {
+  if (!ids.length) return Promise.resolve();
+  return transaction('readwrite', s => { ids.forEach(id => s.delete(id)); });
 }
 export function supprimerImagesDuLieu(idLieu) { return supprimerSi(lieu => lieu !== idLieu); }
 /* Ménage au démarrage : images d'un lieu qui n'existe plus (suppression non annulée, app fermée entre-temps). */
