@@ -541,6 +541,8 @@ P.galerie.addEventListener('change', async () => {
 });
 $('#btn-fermer-photo').addEventListener('click', () => { if (lieuInterne) history.back(); else { history.replaceState({}, '', '#/lieu/' + lieuCourant); route(); } });
 $('#btn-reprendre').addEventListener('click', () => modeVisee());
+$('#btn-recompter').addEventListener('click', () => { if (editeur) { editeur.auto(); vibrer(8); } });
+$('#btn-ajuster').addEventListener('click', () => { if (editeur) { editeur.ajuster(); vibrer(8); } });
 
 async function modeGrille(blob) {
   const lieu = lieuActuel(); if (!lieu) return;

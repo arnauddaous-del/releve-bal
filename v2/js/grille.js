@@ -192,6 +192,8 @@ export function creerEditeur(scene, photo, reglage) {
       dessiner(); changer();
     },
     auto() { grid = grilleAuto(small); dessiner(); changer(); },
+    /* recale les lignes sur les bords des boîtes, après une retouche (bouton « Ajuster » de la V1) */
+    ajuster() { const off = grid.off; grid = C.fitGrid(small, grid, 'snap'); grid.off = off; dessiner(); changer(); },
     sens(s) { sens = s === 'v' ? 'v' : 'h'; dessiner(); },
     cases: actives,
     redessiner: dimensionner,

@@ -232,7 +232,7 @@ h1, h2, p { margin: 0; }
 .ecran-photo { position: fixed; z-index: 15; inset: 0; background: #000; color: #fff; display: flex; flex-direction: column; overflow: hidden; }
 .visee { position: absolute; inset: 0; }
 .visee video, .visee canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
-.visee video { object-fit: cover; }
+.visee video { object-fit: contain; }
 .guide {
   position: absolute; left: 50%; top: calc(env(safe-area-inset-top, 0px) + 74px); transform: translateX(-50%);
   max-width: calc(100% - 40px); padding: 8px 16px; border-radius: 99px; background: rgba(0, 0, 0, .55); font-size: 15px; font-weight: 500; text-align: center;
@@ -260,17 +260,20 @@ h1, h2, p { margin: 0; }
 }
 .declencheur:active { transform: scale(.92); background: #fff; }
 .declencheur:disabled { opacity: .4; }
-.scene { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 68px); left: 0; right: 0; bottom: 272px; display: flex; align-items: center; justify-content: center; }
+.scene { position: absolute; top: calc(env(safe-area-inset-top, 0px) + 68px); left: 0; right: 0; bottom: 316px; display: flex; align-items: center; justify-content: center; }
 .scene-photo { display: block; touch-action: none; border-radius: 6px; }
 .photo-bas.reglage { display: block; padding: 14px 20px calc(var(--bas) + 18px); background: #111; border-radius: 20px 20px 0 0; }
 .compteurs { display: flex; gap: 10px; }
-.compteur { flex: 1; display: flex; align-items: center; gap: 4px; padding: 4px 6px 4px 14px; border-radius: 12px; background: #2c2c2e; }
-.compteur span { flex: 1; font-size: 15px; color: rgba(255, 255, 255, .7); }
-.compteur b { min-width: 2ch; text-align: center; font-size: 19px; font-variant-numeric: tabular-nums; }
-.compteur button { width: 40px; height: 40px; border: 0; border-radius: 10px; background: #3a3a3c; color: #fff; font-size: 22px; line-height: 1; }
+.compteur { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; padding: 4px; border-radius: 12px; background: #2c2c2e; }
+.compteur .valeur { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.compteur b { font-size: 20px; font-variant-numeric: tabular-nums; }
+.compteur small { font-size: 12px; color: rgba(255, 255, 255, .65); }
+.compteur button { flex: none; width: 44px; height: 44px; border: 0; border-radius: 10px; background: #3a3a3c; color: #fff; font-size: 22px; line-height: 1; }
 .ecran-photo .segments { margin-top: 10px; background: #2c2c2e; }
 .ecran-photo .segments button { color: rgba(255, 255, 255, .7); }
 .ecran-photo .segments button[aria-checked="true"] { background: #636366; color: #fff; }
+.retouches { display: flex; justify-content: center; gap: 8px; }
+.retouches .texte { min-height: 40px; font-size: 15px; color: #4cc4be; }
 .grille-info { margin: 10px 2px 0; font-size: 13px; color: rgba(255, 255, 255, .65); text-align: center; }
 .photo-actions { margin-top: 12px; display: flex; gap: 10px; align-items: center; }
 .photo-actions .principal { flex: 1; }

@@ -96,14 +96,18 @@
   </div>
   <div class="photo-bas reglage" id="bas-grille" hidden>
     <div class="compteurs">
-      <div class="compteur"><span>Colonnes</span><button type="button" data-pas="cols:-1" aria-label="Une colonne de moins">−</button><b id="n-cols">0</b><button type="button" data-pas="cols:1" aria-label="Une colonne de plus">+</button></div>
-      <div class="compteur"><span>Rangées</span><button type="button" data-pas="rangs:-1" aria-label="Une rangée de moins">−</button><b id="n-rangs">0</b><button type="button" data-pas="rangs:1" aria-label="Une rangée de plus">+</button></div>
+      <div class="compteur"><button type="button" data-pas="cols:-1" aria-label="Une colonne de moins">−</button><span class="valeur"><b id="n-cols">0</b><small>colonnes</small></span><button type="button" data-pas="cols:1" aria-label="Une colonne de plus">+</button></div>
+      <div class="compteur"><button type="button" data-pas="rangs:-1" aria-label="Une rangée de moins">−</button><span class="valeur"><b id="n-rangs">0</b><small>rangées</small></span><button type="button" data-pas="rangs:1" aria-label="Une rangée de plus">+</button></div>
     </div>
     <div class="segments" role="radiogroup" aria-label="Sens de lecture des boîtes">
       <button type="button" role="radio" data-sens="h">Rangée par rangée</button>
       <button type="button" role="radio" data-sens="v">Colonne par colonne</button>
     </div>
     <p class="grille-info" id="grille-info"></p>
+    <div class="retouches">
+      <button class="texte clair" type="button" id="btn-recompter">Recompter</button>
+      <button class="texte clair" type="button" id="btn-ajuster">Ajuster les lignes</button>
+    </div>
     <div class="photo-actions">
       <button class="texte clair" type="button" id="btn-reprendre">Reprendre</button>
       <button class="principal" type="button" id="btn-lire">Lire</button>

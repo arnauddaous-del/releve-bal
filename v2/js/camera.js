@@ -12,7 +12,8 @@ export function cameraPossible() {
 export async function ouvrirCamera(video, calque, surGuide) {
   const flux = await navigator.mediaDevices.getUserMedia({
     audio: false,
-    video: { facingMode: { ideal: 'environment' }, width: { ideal: 3840 }, height: { ideal: 2160 } }
+    // 4:3 comme la photo : l'aperçu montre exactement ce qui sera photographié (affiché sans rognage)
+    video: { facingMode: { ideal: 'environment' }, aspectRatio: { ideal: 4 / 3 }, width: { ideal: 4032 }, height: { ideal: 3024 } }
   });
   const piste = flux.getVideoTracks()[0];
   video.srcObject = flux;
@@ -30,7 +31,7 @@ export async function ouvrirCamera(video, calque, surGuide) {
 
   const mini = document.createElement('canvas'), mg = mini.getContext('2d', { willReadFrequently: true });
   mini.width = 96; mini.height = 96;
-  let precedent = null, grille = null, tour = 0, fini = false, minuteur = 0;
+  let precedent = null, grille = null, vue = null, tour = 0, fini = false, minuteur = 0;
 
   function analyser() {
     if (fini) return;
@@ -47,7 +48,12 @@ export async function ouvrirCamera(video, calque, surGuide) {
     precedent = g;
     // les boîtes vues, une fois sur deux (environ une fois par seconde)
     if (tour++ % 2 === 0) {
-      try { grille = grilleAuto(petite(video)); } catch (e) { grille = null; }
+      // la grille n'est dessinée que si deux comptages de suite trouvent les mêmes colonnes et rangées
+      let g = null;
+      try { g = grilleAuto(petite(video)); } catch (e) { g = null; }
+      const meme = g && grille && g.cols.length === grille.cols.length && g.rows[0].length === grille.rows[0].length;
+      vue = meme && bouge <= 14 ? g : null;
+      grille = g;
       dessinerGrille();
     }
     let texte, pret = false;
@@ -55,22 +61,22 @@ export async function ouvrirCamera(video, calque, surGuide) {
     else if (bouge > 14) texte = 'Tenez le téléphone immobile';
     else if (incl && window.innerHeight > window.innerWidth && Math.abs(incl.gamma) > 14 && Math.abs(incl.beta) > 45) texte = 'Tenez le téléphone droit';
     else if (incl && window.innerHeight > window.innerWidth && (incl.beta < 55 || incl.beta > 125)) texte = 'Placez le téléphone face aux boîtes';
-    else if (grille) {
-      const n = C.cells(grille).filter(c => !c.off).length;
+    else if (vue) {
+      const n = C.cells(vue).filter(c => !c.off).length;
       texte = 'Environ ' + n + ' boîte' + (n > 1 ? 's' : '') + ' · toutes dans le cadre ?'; pret = true;
-    } else texte = 'Visez les boîtes aux lettres';
-    surGuide({ texte: texte, pret: pret, cols: grille ? grille.cols.length + 1 : 0, rangs: grille ? grille.rows[0].length + 1 : 0 });
+    } else texte = 'Cadrez seulement le bloc de boîtes';
+    surGuide({ texte: texte, pret: pret, cols: vue ? vue.cols.length + 1 : 0, rangs: vue ? vue.rows[0].length + 1 : 0 });
   }
-  // la grille vue, dessinée sur l'aperçu (la vidéo remplit l'écran, rognée sur les bords : object-fit cover)
+  // la grille vue, dessinée sur l'aperçu (la vidéo est affichée entière : object-fit contain)
   function dessinerGrille() {
     const W = calque.clientWidth, H = calque.clientHeight, dpr = Math.min(2, window.devicePixelRatio || 1);
     if (calque.width !== Math.round(W * dpr)) { calque.width = Math.round(W * dpr); calque.height = Math.round(H * dpr); }
     const g = calque.getContext('2d');
     g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
-    if (!grille || !video.videoWidth) return;
-    const vw = video.videoWidth, vh = video.videoHeight, k = Math.max(W / vw, H / vh), ox = (W - vw * k) / 2, oy = (H - vh * k) / 2;
+    if (!vue || !video.videoWidth) return;
+    const vw = video.videoWidth, vh = video.videoHeight, k = Math.min(W / vw, H / vh), ox = (W - vw * k) / 2, oy = (H - vh * k) / 2;
     g.strokeStyle = 'rgba(76,196,190,.9)'; g.lineWidth = 2;
-    C.cells(grille).forEach(c => { if (!c.off) g.strokeRect(ox + c.x0 * vw * k, oy + c.y0 * vh * k, (c.x1 - c.x0) * vw * k, (c.y1 - c.y0) * vh * k); });
+    C.cells(vue).forEach(c => { if (!c.off) g.strokeRect(ox + c.x0 * vw * k, oy + c.y0 * vh * k, (c.x1 - c.x0) * vw * k, (c.y1 - c.y0) * vh * k); });
   }
   analyser();
 
