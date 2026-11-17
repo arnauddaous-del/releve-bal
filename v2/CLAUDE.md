@@ -21,6 +21,12 @@ Adresse : https://arnauddaous-del.github.io/releve-bal/v2/ (toujours avec la bar
    variantes d'image, détection PP-OCRv6, ensemble de modèles (PP-OCRv6 medium + un modèle manuscrit français),
    décodage guidé par dictionnaire. Tableau `v2/banc/RESULTATS.md`.
    Objectif : au moins +30 % de boîtes justes du premier coup sur le manuscrit, sans régression sur l'imprimé.
+   **Premier passage le 17/11/2026, mesuré sur un jeu provisoire** (`banc/donnees-provisoires/`, ignoré par git :
+   22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main, 264 boîtes notées dont seulement
+   15 manuscrites certaines). Gardé : décodage par probabilités, dictionnaire (prénoms + noms de famille), règles V2,
+   recoupements du bloc ; deuxième modèle (PP-OCRv6 medium) en option sur les lignes hésitantes. Pas encore fait,
+   faute d'accès depuis cet environnement : modèle manuscrit français (Hugging Face bloqué), détection PP-OCRv6,
+   redressement par étiquette. Chiffres et détail : `banc/RESULTATS.md` et `banc/etapes.md`.
 4. Interface en trois écrans : Accueil, Photo (caméra dans l'app, aide à la prise de vue), Résultat (boîtes à vérifier
    en premier, « Partager » en Excel ou CSV).
 5. « Lecture experte » optionnelle (petit modèle vision-langage en WebGPU, seulement pour les boîtes douteuses).
@@ -44,6 +50,19 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
 - `sw.js` : hors ligne. **Après chaque modification dans `v2/` : `python3 v2/outils/maj_sw.py`** (il réécrit la liste
   des fichiers et la version du cache dans `v2/sw.js`).
 - `outils/icones.py` : redessine les icônes. `outils/verif_cohabitation.py` : voir plus haut.
+- `js/moteur/` : le moteur de lecture de la V2 (modules ES, sans dépendance, pour le Worker et pour le banc).
+  `prenoms.mjs`, `regles.mjs`, `lecture.mjs` : copies de la V1 (état v1-finale), modifiées ici seulement, la V1 ne les
+  charge pas. `regles.mjs` : `parseLabel(lines)` sans option = règles V1 à l'identique ; `parseLabel(lines, { v2: true,
+  zone })` = règles V2 (panneaux du hall, autocollants « Non merci », initiales, ligne hors de l'étiquette).
+  `ctc.mjs` : décodage (faisceau, probabilité exacte d'un texte, confiance). `lignes.mjs` : lecture des lignes d'une
+  boîte (candidates comparées par leur probabilité sur chaque version d'image et chaque modèle, vote pondéré).
+  `lexique.mjs` : dictionnaire (voisins, bonus borné : il suggère, il n'écrase jamais). `bloc.mjs` : recoupements
+  entre les boîtes d'une photo (place de l'étiquette, forme des numéros d'appartement).
+  Pas encore branché sur l'interface (étape 4).
+- Liste des noms de famille : `outils/lexique_noms.py` la fabrique depuis le fichier des personnes décédées de l'INSEE
+  (Licence Ouverte). Pour les mesures, une liste tirée de ce fichier par un tiers est dans `banc/local/` (ignoré :
+  son dépôt est sous AGPL, à ne pas publier). Pour l'app : refaire la liste depuis l'INSEE et la mettre dans
+  `v2/modeles/` (environ 2,8 Mo).
 - `banc/` : le banc d'essai (voir plus bas). Outil de développement, hors de l'app : rien de `banc/` n'est dans la
   liste du service worker.
 
@@ -95,7 +114,10 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
   comptée fausse. Le sens de lecture (réglage de l'utilisateur) est celui qui colle au relevé, sauf `bloc.json`.
 - Les photos envoyées comme images par l'app Claude arrivent souvent réduites (1200 x 1600) : demander des ZIP.
 - Temps sur la machine du banc (1 fil) : environ 0,5 s par boîte ; la même lecture dans Chrome (WebAssembly) : 1,3 à 1,8 s.
-- Une étape de la V2 = un moteur de plus dans `moteurs/`, inscrit dans `CONFIGS` de `banc.mjs`.
+- Une étape de la V2 = une configuration de plus dans `CONFIGS` de `banc.mjs` (moteur `moteurs/v2.mjs`, options).
+  `v2-socle` doit rester identique à `v1` boîte par boîte (vérifié le 17/11/2026 : 264/264).
+- `--memoire` : garde les sorties des modèles (`local/memoire/`) et les lignes lues par photo (`local/lignes/`), pour
+  essayer vite des règles. Les temps mesurés avec `--memoire` sont faux : mesurer sans pour le tableau.
 
 ## Publier
 `python3 v2/outils/maj_sw.py`, `python3 v2/outils/verif_cohabitation.py`, test local

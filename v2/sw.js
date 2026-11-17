@@ -2,8 +2,8 @@
    Ses caches commencent par « imprimbal2- » : la V1 (caches « releve-bal- ») ne les efface pas,
    et celui-ci n'efface jamais ceux de la V1.
    APP et COQUILLE sont réécrits par outils/maj_sw.py : ne pas les modifier à la main. */
-var APP = 'imprimbal2-app-972aa85ac1';
-var COQUILLE = ["css/app.css", "icons/apple-touch-icon.png", "icons/favicon-48.png", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "index.html", "js/app.js", "js/import-v1.js", "js/stockage.js", "manifest.webmanifest"];
+var APP = 'imprimbal2-app-3df4a6d2fc';
+var COQUILLE = ["css/app.css", "icons/apple-touch-icon.png", "icons/favicon-48.png", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "index.html", "js/app.js", "js/import-v1.js", "js/moteur/bloc.mjs", "js/moteur/ctc.mjs", "js/moteur/lecture.mjs", "js/moteur/lexique.mjs", "js/moteur/lignes.mjs", "js/moteur/prenoms.mjs", "js/moteur/regles.mjs", "js/stockage.js", "manifest.webmanifest"];
 var PREFIXE_APP = 'imprimbal2-app-';
 
 self.addEventListener('install', function (e) {

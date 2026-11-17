@@ -2,15 +2,17 @@
 /* Banc d'essai d'Imprim Bal : lit un dossier de blocs (photo + relevé corrigé) avec une ou plusieurs configurations
    de lecture et mesure l'écart avec le relevé corrigé.
 
-   node banc.mjs [--donnees dossier] [--config v1,v1-renforcee] [--bloc texte] [--enregistrer] [--planches] [--detail] [--fils n]
+   node banc.mjs [--donnees dossier] [--config v1,v2-bloc] [--bloc texte] [--jeu texte] [--enregistrer] [--planches] [--detail] [--fils n] [--memoire]
 
    --donnees      dossier des blocs (défaut : donnees/, hors du dépôt : voir .gitignore et README.md)
    --config       configurations à mesurer, séparées par des virgules (défaut : v1)
    --bloc         ne garder que les blocs dont le nom contient ce texte
+   --jeu          nom du jeu d'essai, rappelé dans RESULTATS.md (ex. « jeu provisoire »)
    --enregistrer  inscrire les totaux dans resultats.json et réécrire RESULTATS.md
    --planches     enregistrer les images des boîtes, numérotées, dans rapports/planches/ (pour classer manuscrit / imprimé)
    --detail       afficher les boîtes fausses (lu / attendu) : des noms s'affichent, à garder pour soi
-   --fils         fils de calcul (défaut : 1, pour des temps comparables d'une mesure à l'autre) */
+   --fils         fils de calcul (défaut : 1, pour des temps comparables d'une mesure à l'autre)
+   --memoire      garder les calculs des modèles et les lignes lues dans local/ (essais rapides ; temps alors faux) */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -18,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 import { createCanvas } from '@napi-rs/canvas';
 import { ouvrirPhoto, enregistrerJPEG } from './image.mjs';
 import { creerV1, ordonner } from './moteurs/v1.mjs';
+import { creerV2 } from './moteurs/v2.mjs';
 import { trouverBlocs, lireReleve, lireEcriture, grilleImposee } from './verite.mjs';
 import { aligner, compteur, compter, ajouter, indicateurs, listeNoms, caseNoms } from './mesures.mjs';
 import { lireResultats, ecrireResultats } from './resultats.mjs';
@@ -27,18 +30,30 @@ const ICI = path.dirname(fileURLToPath(import.meta.url));
 /* Les configurations mesurables. Chaque étape de la V2 en ajoutera une ici. */
 export const CONFIGS = {
   'v1': { titre: 'V1 telle quelle', creer: o => creerV1({ fils: o.fils }) },
-  'v1-renforcee': { titre: 'V1 + lecture renforcée', creer: o => creerV1({ renforcee: true, fils: o.fils }) }
+  'v1-renforcee': { titre: 'V1 + lecture renforcée', creer: o => creerV1({ renforcee: true, fils: o.fils }) },
+  // étapes de la V2, cumulées dans l'ordre
+  'v2-socle': { titre: 'V2 socle (même lecture que la V1)', creer: o => creerV2({ socle: true, fils: o.fils, memoire: o.memoire }) },
+  'v2-faisceau': { titre: 'V2 + décodage par probabilités', creer: o => creerV2({ fils: o.fils, memoire: o.memoire }) },
+  'v2-prenoms': { titre: 'V2 + dictionnaire des prénoms', creer: o => creerV2({ lexique: 'prenoms', fils: o.fils, memoire: o.memoire }) },
+  'v2-noms': { titre: 'V2 + dictionnaire des noms de famille', creer: o => creerV2({ lexique: 'noms', fils: o.fils, memoire: o.memoire }) },
+  'v2-regles': { titre: 'V2 + règles (panneaux, autocollants, initiales)', creer: o => creerV2({ lexique: 'noms', regles: { v2: true }, fils: o.fils, memoire: o.memoire }) },
+  'v2-bloc': { titre: 'V2 + recoupements du bloc (place de l’étiquette, forme des numéros)', creer: o => creerV2({ lexique: 'noms', bloc: true, fils: o.fils, memoire: o.memoire }) },
+  'v2-bloc-fort': { titre: 'V2 complète + deuxième modèle sur les lignes hésitantes', creer: o => creerV2({ lexique: 'noms', bloc: true, fort: 'faible', fils: o.fils, memoire: o.memoire }) },
+  'v2-fort': { titre: 'V2 + deuxième modèle sur les lignes hésitantes', creer: o => creerV2({ lexique: 'noms', fort: 'faible', fils: o.fils, memoire: o.memoire }) },
+  'v2-fort-tout': { titre: 'V2 + deuxième modèle sur toutes les lignes', creer: o => creerV2({ lexique: 'noms', fort: 'tout', fils: o.fils, memoire: o.memoire }) }
 };
 
 function options(argv) {
-  const o = { donnees: path.join(ICI, 'donnees'), config: ['v1'], bloc: '', enregistrer: false, planches: false, detail: false, fils: 1, aide: false };
+  const o = { donnees: path.join(ICI, 'donnees'), config: ['v1'], bloc: '', jeu: '', enregistrer: false, planches: false, detail: false, fils: 1, memoire: false, aide: false };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i], suivant = () => { if (i + 1 >= argv.length) throw new Error('valeur manquante après ' + a); return argv[++i]; };
     if (a === '--donnees') o.donnees = path.resolve(suivant());
     else if (a === '--config') o.config = suivant().split(',').map(x => x.trim()).filter(Boolean);
     else if (a === '--bloc') o.bloc = suivant();
+    else if (a === '--jeu') o.jeu = suivant();
     else if (a === '--fils') o.fils = Math.max(1, parseInt(suivant(), 10) || 1);
     else if (a === '--enregistrer') o.enregistrer = true;
+    else if (a === '--memoire') o.memoire = true;
     else if (a === '--planches') o.planches = true;
     else if (a === '--detail') o.detail = true;
     else if (a === '--aide' || a === '-h' || a === '--help') o.aide = true;
@@ -49,7 +64,7 @@ function options(argv) {
 
 const pc = v => v == null ? '–' : (100 * v).toFixed(1).replace('.', ',') + ' %';
 const aujourdhui = () => new Date().toLocaleDateString('fr-FR');
-const typeDe = (vrai, types) => !vrai.noms.length ? 'V' : ((types && types.get(vrai.ordre)) || '');
+const typeDe = (vrai, types) => { const t = types && types.get(vrai.ordre); return t === 'X' ? 'X' : !vrai.noms.length ? 'V' : (t || ''); };
 
 /* Compare les boîtes lues (dans l'ordre de flashage) au relevé corrigé. */
 function evaluer(lus, releve, types) {
@@ -57,7 +72,9 @@ function evaluer(lus, releve, types) {
   for (const [i, j] of al.paires) {
     const lu = i == null ? null : lus[i];
     if (j == null) { total.enTrop++; lignes.push({ enTrop: true, lu: lu }); continue; }
-    const vrai = releve.boites[j], t = typeDe(vrai, types), r = compter(total, lu, vrai);
+    const vrai = releve.boites[j], t = typeDe(vrai, types);
+    if (t === 'X') { lignes.push({ ordre: vrai.ordre, type: t, ecartee: true, juste: true, vrai: vrai, lu: lu }); continue; }   // écartée : hors calcul
+    const r = compter(total, lu, vrai);
     if (t) compter(parType[t], lu, vrai);
     lignes.push({ ordre: vrai.ordre, type: t, juste: r.juste, vrai: vrai, lu: lu });
   }
@@ -95,7 +112,7 @@ async function main() {
     return 1;
   }
   // vérité terrain
-  const jeu = { blocs: 0, boites: 0, types: { M: 0, I: 0, V: 0, inconnu: 0 } }, empreinte = crypto.createHash('sha256');
+  const jeu = { blocs: 0, boites: 0, ecartees: 0, types: { M: 0, I: 0, V: 0, inconnu: 0 }, note: o.jeu }, empreinte = crypto.createHash('sha256');
   for (const b of blocs) {
     if (b.probleme) continue;
     try {
@@ -103,9 +120,9 @@ async function main() {
       b.releve = lireReleve(texte);
       b.types = b.ecriture ? lireEcriture(fs.readFileSync(b.ecriture, 'utf8')) : null;
       if (!b.releve.boites.length) { b.probleme = 'CSV sans boîte'; continue; }
-      empreinte.update(b.nom).update(texte).update(b.photos.map(f => path.basename(f) + fs.statSync(f).size).join('|'));
-      jeu.blocs++; jeu.boites += b.releve.boites.length;
-      for (const v of b.releve.boites) jeu.types[typeDe(v, b.types) || 'inconnu']++;
+      empreinte.update(b.nom).update(texte).update(b.ecriture ? fs.readFileSync(b.ecriture, 'utf8') : '').update(b.photos.map(f => path.basename(f) + fs.statSync(f).size).join('|'));
+      jeu.blocs++;
+      for (const v of b.releve.boites) { const t = typeDe(v, b.types); if (t === 'X') jeu.ecartees++; else { jeu.boites++; jeu.types[t || 'inconnu']++; } }
     } catch (err) { b.probleme = err.message; }
   }
   for (const b of blocs.filter(b => b.probleme)) console.log('  ignoré : ' + b.nom + ' (' + b.probleme + ')');
@@ -113,7 +130,7 @@ async function main() {
   if (!blocs.length) { console.log('Aucun bloc utilisable.'); return 1; }
   jeu.empreinte = empreinte.digest('hex').slice(0, 12);
   if (!jeu.types.M && !jeu.types.I) jeu.types = null;          // pas encore classé manuscrit / imprimé
-  console.log('Jeu d\'essai : ' + jeu.blocs + ' blocs, ' + jeu.boites + ' boîtes' +
+  console.log('Jeu d\'essai' + (jeu.note ? ' (' + jeu.note + ')' : '') + ' : ' + jeu.blocs + ' blocs, ' + jeu.boites + ' boîtes' + (jeu.ecartees ? ' (+ ' + jeu.ecartees + ' écartées)' : '') +
     (jeu.types ? ' (' + jeu.types.M + ' manuscrites, ' + jeu.types.I + ' imprimées, ' + jeu.types.V + ' sans nom, ' + jeu.types.inconnu + ' non classées)' : ' (manuscrit / imprimé : pas encore classé)'));
 
   const resultats = lireResultats();
@@ -128,7 +145,7 @@ async function main() {
         const photo = await ouvrirPhoto(f), nomPhoto = path.basename(f);
         if (Math.max(photo.width, photo.height) < 3000) alertes.push(nomPhoto + ' : ' + photo.width + ' x ' + photo.height + ' px, photo réduite ?');
         const forcee = grilleImposee(b.options.grilles && b.options.grilles[nomPhoto]);
-        lectures.push(await moteur.lirePhoto(photo, { grille: forcee, garderImages: o.planches }));
+        lectures.push(await moteur.lirePhoto(photo, { grille: forcee, garderImages: o.planches, cle: b.nom + '-' + nomPhoto }));
       }
       if (b.releve.pre != null && b.releve.pre !== b.releve.boites.length) alertes.push('le CSV annonce ' + b.releve.pre + ' PRE et contient ' + b.releve.boites.length + ' lignes');
       // sens de lecture : celui du bloc.json, sinon celui des deux qui colle le mieux au relevé (c'est un réglage de l'utilisateur)

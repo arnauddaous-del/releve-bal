@@ -53,6 +53,11 @@ node banc.mjs --planches                           # images des boîtes dans rap
 node parite-v1.mjs photo1.jpg photo2.jpg           # le banc lit-il comme la vraie V1 dans Chrome ?
 ```
 
+Toutes les configurations, dans l'ordre des étapes :
+`node banc.mjs --config v1,v1-renforcee,v2-socle,v2-faisceau,v2-prenoms,v2-noms,v2-regles,v2-bloc,v2-bloc-fort --fils 2 --enregistrer`
+(une vingtaine de minutes pour 22 photos). Les configurations `v2-noms` et suivantes ont besoin de la liste des noms
+de famille dans `local/noms-famille.txt` (voir `../outils/lexique_noms.py`).
+
 ## Ce qui est mesuré
 
 Pour chaque configuration : part de boîtes entièrement justes (noms, appartement et pub, sans une lettre d'écart),
@@ -73,6 +78,7 @@ boîtes au mieux en gardant l'ordre ; une boîte du relevé sans vis-à-vis comp
 
 ## Ajouter une configuration (étapes de la V2)
 
-Écrire un moteur dans `moteurs/` qui expose `lirePhoto(photo, options)` comme `moteurs/v1.mjs`, l'inscrire dans
-`CONFIGS` de `banc.mjs`, puis `node banc.mjs --config v1,<nouvelle> --enregistrer`. Toutes les lignes du tableau
+Le plus souvent : une option de plus dans `moteurs/v2.mjs` (qui charge les modules de `../js/moteur/`, ceux du
+téléphone) et une ligne dans `CONFIGS` de `banc.mjs`. Pour essayer vite : `--memoire` (les sorties des modèles et les
+lignes lues sont gardées dans `local/`, ignoré par git ; les temps mesurés sont alors faux). Ensuite, puis `node banc.mjs --config v1,<nouvelle> --enregistrer`. Toutes les lignes du tableau
 doivent être mesurées sur le même jeu d'essai : le banc le signale sinon.

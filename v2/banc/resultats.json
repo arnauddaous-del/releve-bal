@@ -1,5 +1,780 @@
 {
-  "configurations": {},
+  "configurations": {
+    "v1": {
+      "titre": "V1 telle quelle",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.7727272727272727,
+        "justesTolerant": 0.7878787878787878,
+        "erreursLettres": 0.2922975641869651,
+        "appartement": 0.9318181818181818,
+        "appartementTrouve": 0.9424778761061947,
+        "pub": 0.9659090909090909,
+        "stopTrouve": 0.9464285714285714,
+        "signaleesFausses": 0.40298507462686567,
+        "faussesSignalees": 0.45,
+        "faussesNonSignalees": 0.125,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.26666666666666666,
+          "justesTolerant": 0.3333333333333333,
+          "erreursLettres": 0.16896551724137931,
+          "appartement": 0.8,
+          "appartementTrouve": 0.7272727272727273,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.8571428571428571,
+          "faussesSignalees": 0.5454545454545454,
+          "faussesNonSignalees": 0.3333333333333333,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.8101851851851852,
+          "justesTolerant": 0.8240740740740741,
+          "erreursLettres": 0.043824701195219126,
+          "appartement": 0.9537037037037037,
+          "appartementTrouve": 0.9521531100478469,
+          "pub": 0.9583333333333334,
+          "stopTrouve": 0.9395973154362416,
+          "signaleesFausses": 0.4642857142857143,
+          "faussesSignalees": 0.3170731707317073,
+          "faussesNonSignalees": 0.12962962962962962,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 0.7575757575757576,
+          "justesTolerant": 0.7575757575757576,
+          "erreursLettres": null,
+          "appartement": 0.8484848484848485,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.25,
+          "faussesSignalees": 1,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 339.6659271451609,
+      "poidsMo": 26.355709,
+      "fils": 2
+    },
+    "v1-renforcee": {
+      "titre": "V1 + lecture renforcée",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.7803030303030303,
+        "justesTolerant": 0.7954545454545454,
+        "erreursLettres": 0.3015141540487163,
+        "appartement": 0.9318181818181818,
+        "appartementTrouve": 0.9469026548672567,
+        "pub": 0.9734848484848485,
+        "stopTrouve": 0.9583333333333334,
+        "signaleesFausses": 0.43243243243243246,
+        "faussesSignalees": 0.5517241379310345,
+        "faussesNonSignalees": 0.09848484848484848,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.3333333333333333,
+          "justesTolerant": 0.4,
+          "erreursLettres": 0.19655172413793104,
+          "appartement": 0.8,
+          "appartementTrouve": 0.7272727272727273,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.625,
+          "faussesSignalees": 0.5,
+          "faussesNonSignalees": 0.3333333333333333,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.8194444444444444,
+          "justesTolerant": 0.8333333333333334,
+          "erreursLettres": 0.048511835012889616,
+          "appartement": 0.9583333333333334,
+          "appartementTrouve": 0.9569377990430622,
+          "pub": 0.9675925925925926,
+          "stopTrouve": 0.9530201342281879,
+          "signaleesFausses": 0.5454545454545454,
+          "faussesSignalees": 0.46153846153846156,
+          "faussesNonSignalees": 0.09722222222222222,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 0.7272727272727273,
+          "justesTolerant": 0.7272727272727273,
+          "erreursLettres": null,
+          "appartement": 0.8181818181818182,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.2727272727272727,
+          "faussesSignalees": 1,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 412.69237570322554,
+      "poidsMo": 64.739817,
+      "fils": 2
+    },
+    "v2-socle": {
+      "titre": "V2 socle (même lecture que la V1)",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.7727272727272727,
+        "justesTolerant": 0.7878787878787878,
+        "erreursLettres": 0.2922975641869651,
+        "appartement": 0.9318181818181818,
+        "appartementTrouve": 0.9424778761061947,
+        "pub": 0.9659090909090909,
+        "stopTrouve": 0.9464285714285714,
+        "signaleesFausses": 0.40298507462686567,
+        "faussesSignalees": 0.45,
+        "faussesNonSignalees": 0.125,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.26666666666666666,
+          "justesTolerant": 0.3333333333333333,
+          "erreursLettres": 0.16896551724137931,
+          "appartement": 0.8,
+          "appartementTrouve": 0.7272727272727273,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.8571428571428571,
+          "faussesSignalees": 0.5454545454545454,
+          "faussesNonSignalees": 0.3333333333333333,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.8101851851851852,
+          "justesTolerant": 0.8240740740740741,
+          "erreursLettres": 0.043824701195219126,
+          "appartement": 0.9537037037037037,
+          "appartementTrouve": 0.9521531100478469,
+          "pub": 0.9583333333333334,
+          "stopTrouve": 0.9395973154362416,
+          "signaleesFausses": 0.4642857142857143,
+          "faussesSignalees": 0.3170731707317073,
+          "faussesNonSignalees": 0.12962962962962962,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 0.7575757575757576,
+          "justesTolerant": 0.7575757575757576,
+          "erreursLettres": null,
+          "appartement": 0.8484848484848485,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.25,
+          "faussesSignalees": 1,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 332.1108801709685,
+      "poidsMo": 26.299872,
+      "fils": 2
+    },
+    "v2-faisceau": {
+      "titre": "V2 + décodage par probabilités",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.7803030303030303,
+        "justesTolerant": 0.7954545454545454,
+        "erreursLettres": 0.25257845073513274,
+        "appartement": 0.928030303030303,
+        "appartementTrouve": 0.9380530973451328,
+        "pub": 0.9659090909090909,
+        "stopTrouve": 0.9464285714285714,
+        "signaleesFausses": 0.3855421686746988,
+        "faussesSignalees": 0.5517241379310345,
+        "faussesNonSignalees": 0.09848484848484848,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.2,
+          "justesTolerant": 0.26666666666666666,
+          "erreursLettres": 0.13793103448275862,
+          "appartement": 0.7333333333333333,
+          "appartementTrouve": 0.6363636363636364,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.875,
+          "faussesSignalees": 0.5833333333333334,
+          "faussesNonSignalees": 0.3333333333333333,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.8194444444444444,
+          "justesTolerant": 0.8333333333333334,
+          "erreursLettres": 0.04101242090461683,
+          "appartement": 0.9537037037037037,
+          "appartementTrouve": 0.9521531100478469,
+          "pub": 0.9583333333333334,
+          "stopTrouve": 0.9395973154362416,
+          "signaleesFausses": 0.42857142857142855,
+          "faussesSignalees": 0.46153846153846156,
+          "faussesNonSignalees": 0.09722222222222222,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 0.7878787878787878,
+          "justesTolerant": 0.7878787878787878,
+          "erreursLettres": null,
+          "appartement": 0.8484848484848485,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.21212121212121213,
+          "faussesSignalees": 1,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 339.78148435161455,
+      "poidsMo": 26.299872,
+      "fils": 2
+    },
+    "v2-prenoms": {
+      "titre": "V2 + dictionnaire des prénoms",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.7840909090909091,
+        "justesTolerant": 0.7992424242424242,
+        "erreursLettres": 0.25170068027210885,
+        "appartement": 0.928030303030303,
+        "appartementTrouve": 0.9380530973451328,
+        "pub": 0.9659090909090909,
+        "stopTrouve": 0.9464285714285714,
+        "signaleesFausses": 0.3855421686746988,
+        "faussesSignalees": 0.5614035087719298,
+        "faussesNonSignalees": 0.0946969696969697,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.26666666666666666,
+          "justesTolerant": 0.3333333333333333,
+          "erreursLettres": 0.1206896551724138,
+          "appartement": 0.7333333333333333,
+          "appartementTrouve": 0.6363636363636364,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.875,
+          "faussesSignalees": 0.6363636363636364,
+          "faussesNonSignalees": 0.26666666666666666,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.8194444444444444,
+          "justesTolerant": 0.8333333333333334,
+          "erreursLettres": 0.04124677759550035,
+          "appartement": 0.9537037037037037,
+          "appartementTrouve": 0.9521531100478469,
+          "pub": 0.9583333333333334,
+          "stopTrouve": 0.9395973154362416,
+          "signaleesFausses": 0.42857142857142855,
+          "faussesSignalees": 0.46153846153846156,
+          "faussesNonSignalees": 0.09722222222222222,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 0.7878787878787878,
+          "justesTolerant": 0.7878787878787878,
+          "erreursLettres": null,
+          "appartement": 0.8484848484848485,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.21212121212121213,
+          "faussesSignalees": 1,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 342.8282257290309,
+      "poidsMo": 26.299872,
+      "fils": 2
+    },
+    "v2-noms": {
+      "titre": "V2 + dictionnaire des noms de famille",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.7992424242424242,
+        "justesTolerant": 0.8181818181818182,
+        "erreursLettres": 0.2446785165679175,
+        "appartement": 0.928030303030303,
+        "appartementTrouve": 0.9380530973451328,
+        "pub": 0.9659090909090909,
+        "stopTrouve": 0.9464285714285714,
+        "signaleesFausses": 0.3614457831325301,
+        "faussesSignalees": 0.5660377358490566,
+        "faussesNonSignalees": 0.08712121212121213,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.4,
+          "justesTolerant": 0.5333333333333333,
+          "erreursLettres": 0.06896551724137931,
+          "appartement": 0.7333333333333333,
+          "appartementTrouve": 0.6363636363636364,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.75,
+          "faussesSignalees": 0.6666666666666666,
+          "faussesNonSignalees": 0.2,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.8287037037037037,
+          "justesTolerant": 0.8425925925925926,
+          "erreursLettres": 0.0398406374501992,
+          "appartement": 0.9537037037037037,
+          "appartementTrouve": 0.9521531100478469,
+          "pub": 0.9583333333333334,
+          "stopTrouve": 0.9395973154362416,
+          "signaleesFausses": 0.40476190476190477,
+          "faussesSignalees": 0.4594594594594595,
+          "faussesNonSignalees": 0.09259259259259259,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 0.7878787878787878,
+          "justesTolerant": 0.7878787878787878,
+          "erreursLettres": null,
+          "appartement": 0.8484848484848485,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.21212121212121213,
+          "faussesSignalees": 1,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 386.3957872903196,
+      "poidsMo": 29.065032,
+      "fils": 2
+    },
+    "v2-regles": {
+      "titre": "V2 + règles (panneaux, autocollants, initiales)",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.875,
+        "justesTolerant": 0.8901515151515151,
+        "erreursLettres": 0.0228220320386219,
+        "appartement": 0.9507575757575758,
+        "appartementTrouve": 0.9424778761061947,
+        "pub": 0.9886363636363636,
+        "stopTrouve": 0.9821428571428571,
+        "signaleesFausses": 0.21686746987951808,
+        "faussesSignalees": 0.5454545454545454,
+        "faussesNonSignalees": 0.056818181818181816,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.4,
+          "justesTolerant": 0.5333333333333333,
+          "erreursLettres": 0.06896551724137931,
+          "appartement": 0.7333333333333333,
+          "appartementTrouve": 0.6363636363636364,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.75,
+          "faussesSignalees": 0.6666666666666666,
+          "faussesNonSignalees": 0.2,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.8888888888888888,
+          "justesTolerant": 0.8981481481481481,
+          "erreursLettres": 0.019685962034216076,
+          "appartement": 0.9583333333333334,
+          "appartementTrouve": 0.9569377990430622,
+          "pub": 0.9861111111111112,
+          "stopTrouve": 0.9798657718120806,
+          "signaleesFausses": 0.2857142857142857,
+          "faussesSignalees": 0.5,
+          "faussesNonSignalees": 0.05555555555555555,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 1,
+          "justesTolerant": 1,
+          "erreursLettres": null,
+          "appartement": 1,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0,
+          "faussesSignalees": null,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 378.35472221935186,
+      "poidsMo": 29.065032,
+      "fils": 2
+    },
+    "v2-bloc": {
+      "titre": "V2 + recoupements du bloc (place de l’étiquette, forme des numéros)",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.9166666666666666,
+        "justesTolerant": 0.9318181818181818,
+        "erreursLettres": 0.008119376782971253,
+        "appartement": 0.9772727272727273,
+        "appartementTrouve": 0.9734513274336283,
+        "pub": 0.9886363636363636,
+        "stopTrouve": 0.9821428571428571,
+        "signaleesFausses": 0.14457831325301204,
+        "faussesSignalees": 0.5454545454545454,
+        "faussesNonSignalees": 0.03787878787878788,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.5333333333333333,
+          "justesTolerant": 0.6666666666666666,
+          "erreursLettres": 0.06896551724137931,
+          "appartement": 0.8666666666666667,
+          "appartementTrouve": 0.8181818181818182,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.625,
+          "faussesSignalees": 0.7142857142857143,
+          "faussesNonSignalees": 0.13333333333333333,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.9305555555555556,
+          "justesTolerant": 0.9398148148148148,
+          "erreursLettres": 0.00398406374501992,
+          "appartement": 0.9814814814814815,
+          "appartementTrouve": 0.9808612440191388,
+          "pub": 0.9861111111111112,
+          "stopTrouve": 0.9798657718120806,
+          "signaleesFausses": 0.16666666666666666,
+          "faussesSignalees": 0.4666666666666667,
+          "faussesNonSignalees": 0.037037037037037035,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 1,
+          "justesTolerant": 1,
+          "erreursLettres": null,
+          "appartement": 1,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0,
+          "faussesSignalees": null,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 389.59249343548737,
+      "poidsMo": 29.065032,
+      "fils": 2
+    },
+    "v2-bloc-fort": {
+      "titre": "V2 complète + deuxième modèle sur les lignes hésitantes",
+      "date": "17/11/2026",
+      "jeu": {
+        "blocs": 22,
+        "boites": 264,
+        "ecartees": 46,
+        "types": {
+          "M": 15,
+          "I": 216,
+          "V": 33,
+          "inconnu": 0
+        },
+        "note": "provisoire : 22 photos du projet, vérité tirée des lectures de la V1 corrigées à la main",
+        "empreinte": "3214538e34ed"
+      },
+      "indicateurs": {
+        "boites": 264,
+        "justes": 0.928030303030303,
+        "justesTolerant": 0.9431818181818182,
+        "erreursLettres": 0.0054860653938994955,
+        "appartement": 0.9886363636363636,
+        "appartementTrouve": 0.9911504424778761,
+        "pub": 0.9886363636363636,
+        "stopTrouve": 0.9821428571428571,
+        "signaleesFausses": 0.10714285714285714,
+        "faussesSignalees": 0.47368421052631576,
+        "faussesNonSignalees": 0.03787878787878788,
+        "manquantes": 0,
+        "enTrop": 0
+      },
+      "parType": {
+        "M": {
+          "boites": 15,
+          "justes": 0.6666666666666666,
+          "justesTolerant": 0.8,
+          "erreursLettres": 0.020689655172413793,
+          "appartement": 0.9333333333333333,
+          "appartementTrouve": 0.9090909090909091,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.375,
+          "faussesSignalees": 0.6,
+          "faussesNonSignalees": 0.13333333333333333,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "I": {
+          "boites": 216,
+          "justes": 0.9398148148148148,
+          "justesTolerant": 0.9490740740740741,
+          "erreursLettres": 0.00445277712678697,
+          "appartement": 0.9953703703703703,
+          "appartementTrouve": 0.9952153110047847,
+          "pub": 0.9861111111111112,
+          "stopTrouve": 0.9798657718120806,
+          "signaleesFausses": 0.11627906976744186,
+          "faussesSignalees": 0.38461538461538464,
+          "faussesNonSignalees": 0.037037037037037035,
+          "manquantes": 0,
+          "enTrop": 0
+        },
+        "V": {
+          "boites": 33,
+          "justes": 0.9696969696969697,
+          "justesTolerant": 0.9696969696969697,
+          "erreursLettres": null,
+          "appartement": 0.9696969696969697,
+          "appartementTrouve": 1,
+          "pub": 1,
+          "stopTrouve": 1,
+          "signaleesFausses": 0.030303030303030304,
+          "faussesSignalees": 1,
+          "faussesNonSignalees": 0,
+          "manquantes": 0,
+          "enTrop": 0
+        }
+      },
+      "grilles": {
+        "justes": 22,
+        "blocs": 22
+      },
+      "msParBoite": 470.1466695806421,
+      "poidsMo": 67.44914,
+      "fils": 2
+    }
+  },
   "fidelite": {
     "date": "16/11/2026",
     "navigateur": "Chrome 153",

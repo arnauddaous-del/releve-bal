@@ -4,7 +4,8 @@
    - soit un dossier : ses photos (dans l'ordre des lectures : 1.jpg, 2.jpg… si le lieu en a plusieurs) et UN fichier .csv ;
    - soit, directement dans le dossier des données, une photo et un CSV du même nom (immeuble-a.jpg + immeuble-a.csv).
    Fichiers facultatifs d'un bloc-dossier :
-   - ecriture.csv : « ordre;type », type = M (au moins un nom manuscrit), I (imprimé), V (boîte sans nom) ;
+   - ecriture.csv : « ordre;type », type = M (au moins un nom manuscrit), I (imprimé), V (boîte sans nom),
+     X (à écarter : étiquette illisible même pour un humain, la boîte n'entre dans aucun calcul) ;
    - bloc.json : { "sens": "h" | "v", "grilles": { "1.jpg": "6x4" } } quand il faut imposer le sens ou le nombre de boîtes. */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -59,13 +60,13 @@ export function lireReleve(texte) {
   return r;
 }
 
-/* ecriture.csv -> Map(ordre -> 'M' | 'I' | 'V') */
+/* ecriture.csv -> Map(ordre -> 'M' | 'I' | 'V' | 'X') */
 export function lireEcriture(texte) {
   const m = new Map();
   for (const l of String(texte).replace(/^﻿/, '').split(/\r?\n/)) {
     const p = l.split(/[;,\t]/).map(x => x.trim());
     const t = (p[1] || '').toUpperCase()[0];
-    if (/^\d+$/.test(p[0]) && 'MIV'.includes(t) && t) m.set(+p[0], t);
+    if (/^\d+$/.test(p[0]) && 'MIVX'.includes(t) && t) m.set(+p[0], t);
   }
   return m;
 }

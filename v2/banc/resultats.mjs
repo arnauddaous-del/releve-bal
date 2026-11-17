@@ -22,7 +22,7 @@ export function ecrireResultats(r) {
   } else {
     const jeux = new Set(cfgs.map(([, c]) => c.jeu.empreinte)), j = cfgs[cfgs.length - 1][1].jeu;
     L.push('## Lecture', '',
-      'Jeu d\'essai : ' + j.blocs + ' blocs, ' + j.boites + ' boîtes' +
+      'Jeu d\'essai' + (j.note ? ' **' + j.note + '**' : '') + ' : ' + j.blocs + ' blocs, ' + j.boites + ' boîtes' + (j.ecartees ? ' (plus ' + j.ecartees + ' écartées, illisibles avec certitude)' : '') +
       (j.types ? ' (' + j.types.M + ' manuscrites, ' + j.types.I + ' imprimées, ' + j.types.V + ' sans nom' + (j.types.inconnu ? ', ' + j.types.inconnu + ' non classées' : '') + ')' : '') + '.',
       jeux.size > 1 ? '\n**Attention : les lignes ci-dessous n\'ont pas toutes été mesurées sur le même jeu d\'essai. Relancer les anciennes configurations avant de comparer.**' : '', '',
       '| Configuration | Boîtes justes | dont manuscrit | dont imprimé | Erreurs de lettres | Appartement juste | STOP PUB juste | « À vérifier » vraiment fausses | Fausses non signalées | Grille juste | Temps par boîte | Poids téléchargé |',
@@ -38,8 +38,11 @@ export function ecrireResultats(r) {
       '- **« À vérifier » vraiment fausses** : parmi les boîtes que l\'app signale, la part qui était réellement fausse.',
       '- **Fausses non signalées** : boîtes fausses que l\'app n\'a pas signalées, rapportées à toutes les boîtes. Ce sont les erreurs qui passent inaperçues.',
       '- **Grille juste** : blocs où le comptage automatique donne le bon nombre de boîtes.',
-      '- **Temps par boîte** : sur la machine du banc, un seul fil. Sert à comparer les configurations entre elles, pas à prédire le temps sur un téléphone.', '');
+      '- **Temps par boîte** : sur la machine du banc (Node, processeur de bureau). Sert à comparer les configurations entre elles, pas à prédire le temps sur un téléphone.', '');
   }
+  // explication des étapes, écrite à la main dans etapes.md
+  const etapes = path.join(path.dirname(FICHIER_JSON), 'etapes.md');
+  if (fs.existsSync(etapes)) L.push(fs.readFileSync(etapes, 'utf8').trim(), '');
   const f = r.fidelite;
   L.push('## Le banc lit-il comme la vraie V1 ?', '');
   if (!f) L.push('Pas encore mesuré (`node parite-v1.mjs photo…`).', '');
