@@ -45,7 +45,7 @@ function compter(small) {
   const a = C.autoCount(small);
   const g = C.uniformGrid(a.cols, a.rows, a.frame);
   if (a.dividers && a.dividers.length === a.cols - 1) g.cols = a.dividers;
-  const grid = C.fitGrid(small, g, a.dividers ? 'rows' : 'detect');
+  const grid = C.fitGrid(small, g, a.dividers ? 'rows' : 'detect', process.env.V1 ? undefined : { v2: true });
   return { n: C.cells(grid).filter(c => !c.off).length, cols: grid.cols.length + 1, rows: grid.rows[0].length + 1, grid: grid };
 }
 function dessinerGrille(small, grid, fichier) {

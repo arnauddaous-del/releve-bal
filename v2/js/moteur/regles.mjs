@@ -93,8 +93,9 @@ var BalCore = (function () {
   }
 
   /* Snap the grid to the photo's door edges. small = downscaled image (~700px wide).
-     mode 'detect': global peak search (counts from the grid); mode 'snap': refine near current lines. */
-  function fitGrid(small, g, mode) {
+     mode 'detect': global peak search (counts from the grid); mode 'snap': refine near current lines.
+     opt (V2 seulement, absent = V1 à l'identique) : { v2: true } = joints recoupés d'une colonne à l'autre. */
+  function fitGrid(small, g, mode, opt) {
     var W = small.width, H = small.height, gr = gray(small);
     var nc = g.cols.length + 1, nr = g.rows[0].length + 1, f = g.frame;
     var fx0 = f.x0 * W, fx1 = f.x1 * W, fy0 = f.y0 * H, fy1 = f.y1 * H;
@@ -106,7 +107,7 @@ var BalCore = (function () {
     if (nfx1 - nfx0 > 0.2 * W) { fx0 = nfx0; fx1 = nfx1; }
     if (nfy1 - nfy0 > 0.2 * H) { fy0 = nfy0; fy1 = nfy1; }
     var out = { frame: { x0: fx0 / W, x1: fx1 / W, y0: fy0 / H, y1: fy1 / H }, cols: [], rows: [], off: g.off };
-    var cw = (fx1 - fx0) / nc, inset = 0.1 * (fy1 - fy0);
+    var cw = (fx1 - fx0) / nc, inset = 0.1 * (fy1 - fy0), profils = [];
     var pc = smooth(lineProfile(gr, W, H, 'x', fx0, fx1, fy0 + inset, fy1 - inset), 2);
     var xs;
     if (mode === 'detect') xs = peaks(pc, Math.round(fx0 + 0.08 * cw), Math.round(fx1 - 0.08 * cw), nc - 1, Math.max(4, 0.15 * cw));
@@ -124,6 +125,7 @@ var BalCore = (function () {
       var pm = smooth(lineProfile(gr, W, H, 'y', cx0 + m, cx1 - m, fy0, fy1), 2);
       var pr = new Float32Array(pl.length);
       for (var q = 0; q < pl.length; q++) pr[q] = Math.min(pl[q], prr[q]) * 0.7 + pm[q] * 0.3;
+      profils.push(pr);
       var ys;
       if (mode === 'detect' || mode === 'rows') ys = peaks(pr, Math.round(fy0 + 0.3 * rh), Math.round(fy1 - 0.3 * rh), nr - 1, Math.max(4, 0.45 * rh));
       else ys = g.rows[c].map(function (y) { return localPeak(pr, y * H, 0.3 * rh); });
@@ -138,8 +140,36 @@ var BalCore = (function () {
       var off = {};
       for (k = 0; k < nc; k++) if (widths[k] < 0.45 * med) for (var r = 0; r < nr; r++) off[k + ',' + r] = true;
       out.off = off;
+      if (opt && opt.v2 && nr > 1) recouperJoints(out, profils, H, (fy1 - fy0) / nr, fy0 / H, fy1 / H);
     }
     return out;
+  }
+
+  /* V2 : dans un bloc, les colonnes ont presque toujours leurs joints aux mêmes hauteurs. Si une colonne place un joint
+     loin de la position sur laquelle au moins deux autres colonnes s'accordent, et que ce joint découpe une boîte
+     anormalement basse (moins de 60 % de la hauteur moyenne), c'est un faux joint (bord d'étiquette, bande de scotch,
+     fente) : on cherche le vrai joint près de la position commune. Des colonnes réellement décalées (boîtes de
+     hauteurs différentes) ne sont pas touchées : leurs boîtes n'ont pas de hauteur anormale. */
+  function recouperJoints(out, profils, H, rh, haut, bas) {
+    var nc = out.rows.length, nr = out.rows[0].length + 1, actives = [], c, j;
+    for (c = 0; c < nc; c++) if (!out.off[c + ',0']) actives.push(c);
+    if (actives.length < 3) return;
+    var pas = rh / H;
+    for (j = 0; j < nr - 1; j++) {
+      var vals = actives.map(function (k) { return out.rows[k][j]; }).sort(function (a, b) { return a - b; });
+      var med = vals[Math.floor(vals.length / 2)];
+      var appui = vals.filter(function (v) { return Math.abs(v - med) < 0.15 * pas; }).length;
+      if (appui < 2) continue;
+      actives.forEach(function (k) {
+        var rs = out.rows[k], y = rs[j];
+        if (Math.abs(y - med) < 0.3 * pas) return;
+        var avant = j === 0 ? haut : rs[j - 1], apres = j === nr - 2 ? bas : rs[j + 1];
+        if (y - avant >= 0.6 * pas && apres - y >= 0.6 * pas) return;
+        var ny = localPeak(profils[k], med * H, 0.12 * rh) / H;
+        if (ny > avant + 0.3 * pas && ny < apres - 0.3 * pas) rs[j] = ny;
+        else if (med > avant + 0.3 * pas && med < apres - 0.3 * pas) rs[j] = med;
+      });
+    }
   }
 
   /* First guess of the cabinet's outer frame: the pair of edges between which n evenly spaced

@@ -69,9 +69,9 @@ export async function creerV2(options = {}) {
     const a = C.autoCount(small);
     let g = C.uniformGrid(a.cols, a.rows, a.frame);
     if (a.dividers && a.dividers.length === a.cols - 1) g.cols = a.dividers;
-    let grid = C.fitGrid(small, g, a.dividers ? 'rows' : 'detect');
+    let grid = C.fitGrid(small, g, a.dividers ? 'rows' : 'detect', options.socle ? undefined : { v2: true });
     const auto = { cols: a.cols, rows: a.rows };
-    if (forcee && (forcee.cols !== a.cols || forcee.rows !== a.rows)) grid = C.fitGrid(small, C.uniformGrid(forcee.cols, forcee.rows, grid.frame), 'detect');
+    if (forcee && (forcee.cols !== a.cols || forcee.rows !== a.rows)) grid = C.fitGrid(small, C.uniformGrid(forcee.cols, forcee.rows, grid.frame), 'detect', options.socle ? undefined : { v2: true });
     return { full: full, grid: grid, auto: auto, cols: grid.cols.length + 1, rows: grid.rows[0].length + 1, redresse: redresse };
   }
 
@@ -100,11 +100,13 @@ export async function creerV2(options = {}) {
      d'interprétation (regles.mjs, bloc.mjs) se mesure alors sans relire les photos. La clé tient compte des options
      de lecture et du contenu des modules de lecture. */
   const cleLecture = crypto.createHash('sha1').update(JSON.stringify([options.redresser, options.socle, options.fort, options.lexique, options.reglagesLexique, options.lexiquePartout, options.poidsLexique, options.largeur, options.poidsFort]))
-    .update(['lecture.mjs', 'lignes.mjs', 'ctc.mjs', 'lexique.mjs', 'prenoms.mjs', 'redresser.mjs'].map(f => fs.readFileSync(path.join(DEPOT, 'v2', 'js', 'moteur', f), 'utf8')).join('')).digest('hex').slice(0, 12);
+    .update(['lecture.mjs', 'lignes.mjs', 'ctc.mjs', 'lexique.mjs', 'prenoms.mjs', 'redresser.mjs', 'regles.mjs'].map(f => fs.readFileSync(path.join(DEPOT, 'v2', 'js', 'moteur', f), 'utf8')).join('')).digest('hex').slice(0, 12);
 
   async function lirePhoto(photo, opt = {}) {
     const memo = options.memoire && !opt.garderImages && !opt.petite && opt.cle
-      ? path.join(LOCAL, 'lignes', cleLecture, opt.cle.replace(/[^A-Za-z0-9_.-]/g, '_') + (opt.grille ? '-' + opt.grille.cols + 'x' + opt.grille.rows : '') + '.json') : null;
+      ? path.join(LOCAL, 'lignes', cleLecture, opt.cle.replace(/[^A-Za-z0-9_.-]/g, '_') + (opt.grille ? '-' + opt.grille.cols + 'x' + opt.grille.rows : '') +
+        // le fichier lui-même (deux dossiers de données peuvent avoir des photos du même nom)
+        (opt.chemin ? '-' + crypto.createHash('sha1').update(path.resolve(opt.chemin) + ':' + fs.statSync(opt.chemin).size + ':' + fs.statSync(opt.chemin).mtimeMs).digest('hex').slice(0, 10) : '') + '.json') : null;
     let g, cases, lus, msGrille = 0;
     if (memo && fs.existsSync(memo)) {
       const m = JSON.parse(fs.readFileSync(memo, 'utf8'));

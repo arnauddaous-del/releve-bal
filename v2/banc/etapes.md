@@ -50,3 +50,12 @@ bords prolongés autour) :
 Lecture de bout en bout (`banc.mjs`, les 22 photos penchées de 5° et prises de biais, même vérité) : boîtes justes
 **23,5 % → 78,0 %**, grille juste 1 → 18 blocs sur 22 (configuration `v2-redresse` contre `v2-bloc-prenoms`). Sur les
 photos réelles, aucune n'est redressée : lecture identique (89,8 %).
+
+## Faux joint dans une seule colonne (18/11/2026)
+
+Photo d'Arnaud (bloc de 4 x 5 boîtes, montant central) : dans une colonne, le bord d'une bande de scotch sur une
+étiquette était plus marqué que le vrai joint, et le comptage le prenait pour joint (fausse petite boîte, la vraie
+coupée). `fitGrid(…, { v2: true })` (`recouperJoints` dans `regles.mjs`) : si au moins deux colonnes s'accordent sur
+un joint et qu'une autre le place loin en découpant une boîte de moins de 60 % de la hauteur moyenne, ce joint est
+recherché près de la position commune. Sur le jeu provisoire, aucun joint n'est déplacé (lecture inchangée, 89,8 %,
+22 grilles justes sur 22) ; sur la photo d'Arnaud, la grille devient juste (20 boîtes). Test : `tests/grille.test.mjs`.

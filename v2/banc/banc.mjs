@@ -147,7 +147,7 @@ async function main() {
         const photo = await ouvrirPhoto(f), nomPhoto = path.basename(f);
         if (Math.max(photo.width, photo.height) < 3000) alertes.push(nomPhoto + ' : ' + photo.width + ' x ' + photo.height + ' px, photo réduite ?');
         const forcee = grilleImposee(b.options.grilles && b.options.grilles[nomPhoto]);
-        lectures.push(await moteur.lirePhoto(photo, { grille: forcee, garderImages: o.planches, cle: b.nom + '-' + nomPhoto }));
+        lectures.push(await moteur.lirePhoto(photo, { grille: forcee, garderImages: o.planches, cle: b.nom + '-' + nomPhoto, chemin: f }));
       }
       if (b.releve.pre != null && b.releve.pre !== b.releve.boites.length) alertes.push('le CSV annonce ' + b.releve.pre + ' PRE et contient ' + b.releve.boites.length + ' lignes');
       // sens de lecture : celui du bloc.json, sinon celui des deux qui colle le mieux au relevé (c'est un réglage de l'utilisateur)

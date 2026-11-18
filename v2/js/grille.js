@@ -51,7 +51,7 @@ export function grilleAuto(small) {
   const a = C.autoCount(small);
   const g = C.uniformGrid(a.cols, a.rows, a.frame);
   if (a.dividers && a.dividers.length === a.cols - 1) g.cols = a.dividers;
-  return C.fitGrid(small, g, a.dividers ? 'rows' : 'detect');
+  return C.fitGrid(small, g, a.dividers ? 'rows' : 'detect', { v2: true });
 }
 
 export function ordonner(cases, sens) {
@@ -204,7 +204,7 @@ export function creerEditeur(scene, photo, reglage) {
     /* nouveau nombre de colonnes ou de rangées : la grille est replacée sur la photo (detectGrid de la V1) */
     compter(cols, rangs) {
       cols = Math.max(1, Math.min(12, cols)); rangs = Math.max(1, Math.min(16, rangs));
-      grid = C.fitGrid(small, C.uniformGrid(cols, rangs, C.guessFrame(small, cols, rangs)), 'detect');
+      grid = C.fitGrid(small, C.uniformGrid(cols, rangs, C.guessFrame(small, cols, rangs)), 'detect', { v2: true });
       dessiner(); changer();
     },
     auto() { grid = grilleAuto(small); dessiner(); changer(); },
