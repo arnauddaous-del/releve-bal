@@ -58,6 +58,10 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
 - `js/camera.js` : getUserMedia (caméra arrière), ImageCapture.takePhoto quand il existe (pleine définition, Android),
   sinon l'image de l'aperçu (iPhone) ; aide en direct : lumière, immobilité, inclinaison (portrait, Android), nombre de
   boîtes vues (même comptage que la lecture) dessiné sur l'aperçu ; lampe si le téléphone la propose.
+- `js/moteur/redresser.mjs` : photo prise de biais remise droite avant comptage et lecture (points de fuite des joints,
+  Hough) ; seulement si penchée de plus de 2° ou vue de côté (10 %). Utilisé à la photo (`grille.js`), pour la photo
+  pleine définition de chaque boîte (`moteur-client.js`, quadrilatère redressé) et pendant la visée (`camera.js`,
+  grille dessinée en quadrilatères). Mesures : `banc/etapes.md`, outil `banc/cadrage.mjs`.
 - `js/grille.js` : chargement de la photo (4200 px / 700 px, comme la V1), comptage auto, éditeur de grille repris de
   la V1 (+/− colonnes et rangées, lignes à glisser, case touchée = ignorée), numéros selon le sens de lecture.
 - `js/moteur-client.js` : téléchargement des modèles avec progression, Worker, découpe des cases (même découpe que la
@@ -146,5 +150,5 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
 
 ## Publier
 `python3 v2/outils/maj_sw.py`, `python3 v2/outils/verif_cohabitation.py`, `python3 v2/outils/verif_parcours.py`
-(parcours complet dans Chrome avec une caméra simulée et la photo inventée du banc : 21 vérifications), test local
+(parcours complet dans Chrome avec une caméra simulée et la photo inventée du banc, droite et de biais : 31 vérifications), test local
 (`python3 -m http.server` depuis la racine, puis `http://localhost:8000/v2/`), puis commit et push sur `main`.

@@ -3,6 +3,7 @@
    changer le nombre de colonnes ou de rangées, faire glisser une ligne, toucher une case pour l'ignorer.
    Les numéros affichés suivent le sens de lecture du lieu (rangée par rangée ou colonne par colonne). */
 import { BalCore as C } from './moteur/regles.mjs';
+import { estimer, redresserPixels, inverse, appliquer, produit } from './moteur/redresser.mjs';
 
 /* Charge une photo (fichier ou Blob) en deux tailles : full (4200 px au plus, pour lire) et small (700 px de large,
    pour compter les boîtes), exactement comme la V1. Garde aussi l'image d'origine, en pleine définition (origine) :
@@ -13,10 +14,24 @@ export function chargerPhoto(blob) {
     img.onload = () => {
       URL.revokeObjectURL(url);
       const W = img.naturalWidth, H = img.naturalHeight, k = Math.min(1, 4200 / Math.max(W, H));
-      const full = document.createElement('canvas');
+      let full = document.createElement('canvas');
       full.width = Math.round(W * k); full.height = Math.round(H * k);
       full.getContext('2d').drawImage(img, 0, 0, full.width, full.height);
-      ok({ full: full, small: petite(full), origine: img, largeur: W, hauteur: H });
+      let small = petite(full), versOrigine = [1 / k, 0, 0, 0, 1 / k, 0, 0, 0, 1], angle = 0;
+      // photo prise de biais : redressée (redresser.mjs) ; versOrigine mène d'un pixel de la photo redressée au pixel
+      // de la photo d'origine (pour découper chaque boîte en pleine définition)
+      try {
+        const r = estimer(small);
+        if (r) {
+          const red = redresserPixels(full.getContext('2d').getImageData(0, 0, full.width, full.height), r, 4200);
+          const c = document.createElement('canvas');
+          c.width = red.image.width; c.height = red.image.height;
+          c.getContext('2d').putImageData(new ImageData(red.image.data, c.width, c.height), 0, 0);
+          versOrigine = produit(versOrigine, inverse(red.H));
+          full.width = full.height = 0; full = c; small = petite(full); angle = r.angle;
+        }
+      } catch (e) {}
+      ok({ full: full, small: small, origine: img, largeur: W, hauteur: H, versOrigine: versOrigine, redressee: angle });
     };
     img.onerror = () => { URL.revokeObjectURL(url); ko(new Error('photo illisible')); };
     img.src = url;

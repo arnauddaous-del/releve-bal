@@ -195,6 +195,41 @@ with sync_playwright() as p:
     z = zipfile.ZipFile(chemin); feuille = z.read('xl/worksheets/sheet1.xml').decode()
     check('Excel : fichier valide, « Nombre de PRE » et « BAL Sans Nom » en italique s\'il y en a', 'Nombre de PRE : %d' % n in feuille, d.suggested_filename)
 
+    print('Photo de biais')
+    from PIL import Image as _I
+    import numpy as _np, math as _m
+    im = _I.open(PHOTO).convert('RGB'); W0, H0 = im.size; a = _m.radians(6)
+    coins = [(0.06, 0.08), (0.94, 0.0), (1.0, 1.0), (0.0, 0.92)]
+    q = [(0.5 + (x - 0.5) * 0.9 * _m.cos(a) - (y - 0.5) * 0.9 * _m.sin(a), 0.5 + (x - 0.5) * 0.9 * _m.sin(a) + (y - 0.5) * 0.9 * _m.cos(a)) for x, y in coins]
+    # coefficients PIL : point de sortie → point source (la photo d'origine)
+    A, bb = [], []
+    for (u, v), (x, y) in zip([(x * W0, y * H0) for x, y in q], [(0, 0), (W0, 0), (W0, H0), (0, H0)]):
+        A.append([u, v, 1, 0, 0, 0, -x * u, -x * v]); bb.append(x)
+        A.append([0, 0, 0, u, v, 1, -y * u, -y * v]); bb.append(y)
+    co = _np.linalg.solve(_np.array(A, float), _np.array(bb, float))
+    biais = os.path.join(SITE, 'biais.jpg')
+    im.transform((W0, H0), _I.PERSPECTIVE, tuple(co), _I.BILINEAR, fillcolor=(120, 115, 110)).save(biais, quality=92)
+    page.click('#btn-photo'); page.wait_for_selector('#ecran-photo:not([hidden])', timeout=5000)
+    page.set_input_files('#f-galerie', biais)
+    page.wait_for_selector('#bas-grille:not([hidden])', timeout=30000)
+    check('photo prise de biais : redressée avant le comptage', 'redressée' in page.inner_text('#grille-info'), page.inner_text('#grille-info'))
+    page.screenshot(path=os.path.join(SHOTS, '2b-biais.png'))
+    nb = page.eval_on_selector_all('#liste-boites > li', 'l => l.length')
+    chrono_b = []
+    for quoi, voulu in (('cols', cols), ('rangs', rangs)):
+        for _ in range(20):
+            k = int(page.inner_text('#n-' + quoi))
+            if k == voulu: break
+            page.click('[data-pas="%s:%d"]' % (quoi, 1 if k < voulu else -1))
+    page.click('#btn-lire')
+    page.wait_for_selector('#ecran-lieu:not([hidden])', timeout=600000)
+    n_b = page.eval_on_selector_all('#liste-boites > li', 'l => l.length')
+    check('lecture de la photo de biais', n_b == nb + cols * rangs, '%d boîtes' % n_b)
+    hdb = page.evaluate('''() => new Promise(ok => { const id = location.hash.split('/')[2], bs = JSON.parse(localStorage.getItem('imprimbal2:lieu:' + id)).boxes, b = bs[bs.length - 1];
+      ok({ hd: b.hd, taille: b.hdTaille, nom: b.name }); })''')
+    check('photo de la boîte redressée, en pleine définition', hdb['hd'] and hdb['taille'], hdb)
+    erreurs_b = list(erreurs)
+    check('aucune erreur dans la page', not erreurs_b, erreurs_b[:3])
     print('Hors ligne')
     ctx.set_offline(True)
     page.reload()
@@ -204,7 +239,7 @@ with sync_playwright() as p:
     chrono2 = []
     lire_photo(page, chrono2)
     n3 = page.eval_on_selector_all('#liste-boites > li', 'l => l.length')
-    check('lecture d\'une deuxième photo sans réseau', n3 == 2 * n, '%d boîtes, %.1f s' % (n3, chrono2[0]))
+    check('lecture d\'une photo de plus sans réseau', n3 == n_b + n, '%d boîtes, %.1f s' % (n3, chrono2[0]))
     check('toujours aucune erreur dans la page', not erreurs, erreurs[:3])
     page.screenshot(path=os.path.join(SHOTS, '4-hors-ligne.png'))
     nav.close()

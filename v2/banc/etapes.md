@@ -25,3 +25,28 @@ mêmes photos. Le vrai verdict viendra des blocs corrigés par Arnaud, jamais vu
 Pas encore essayé, faute d'accès depuis l'environnement de travail (Hugging Face et les serveurs de Paddle sont
 bloqués) : un modèle d'écriture manuscrite française (piste : Teklia pylaia-rimes), la détection PP-OCRv6, le
 redressement et l'agrandissement par étiquette, la « lecture experte » (étape 5).
+
+## Cadrage : photo prise de biais (18/11/2026)
+
+Le comptage des boîtes (repris de la V1) cherche des joints parfaitement verticaux et horizontaux : il se perd dès que
+la photo est penchée ou prise de côté. `js/moteur/redresser.mjs` repère les joints (transformée de Hough sur les bords),
+calcule leurs points de fuite et remet le bloc droit avant le comptage et la lecture. Il ne redresse que si le bloc est
+penché de plus de 2° ou vu de côté (un côté plus haut que l'autre de 10 % ou plus) : la contre-plongée seule est bien
+gérée par le comptage, et toutes les photos réelles en ont un peu.
+
+Comptage juste (`cadrage.mjs`, 22 photos du jeu provisoire, chacune déformée de 7 façons ; la photo reste entière, ses
+bords prolongés autour) :
+
+| Prise de vue | Sans redressement | Avec |
+|---|---|---|
+| Droite (photos réelles) | 21 / 22 | 21 / 22 (aucune redressée) |
+| Penchée 4° | 2 / 22 | 21 / 22 |
+| Penchée −8° | 0 / 22 | 22 / 22 |
+| Contre-plongée / plongée | 22 / 22, 20 / 22 | inchangé (pas redressée) |
+| De côté / de côté, fort | 1 / 22, 1 / 22 | 22 / 22, 20 / 22 |
+| Penchée et de biais | 2 / 22 | 20 / 22 |
+| **Toutes les photos de biais** | **48 / 154** | **147 / 154** |
+
+Lecture de bout en bout (`banc.mjs`, les 22 photos penchées de 5° et prises de biais, même vérité) : boîtes justes
+**23,5 % → 78,0 %**, grille juste 1 → 18 blocs sur 22 (configuration `v2-redresse` contre `v2-bloc-prenoms`). Sur les
+photos réelles, aucune n'est redressée : lecture identique (89,8 %).

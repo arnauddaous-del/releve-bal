@@ -2,6 +2,7 @@
    (js/lecteur.js), découpe les cases de la photo et assemble les boîtes. Tout reste sur le téléphone. */
 import { BalCore as C } from './moteur/regles.mjs';
 import { lireBloc } from './moteur/bloc.mjs';
+import { appliquer, produit, deformer } from './moteur/redresser.mjs';
 
 const BASE = new URL('../modeles/', import.meta.url).href;
 const CACHE = 'imprimbal2-modeles-1';
@@ -101,6 +102,30 @@ function decouper(full, c) {
 /* Photo d'une boîte en pleine définition, découpée dans la photo d'origine (pixels du capteur, sans réduction ;
    3000 px au plus de côté, au-delà rien ne se voit de plus à l'écran). */
 const HD_MAX = 3000;
+/* Photo redressée : la case (rectangle sur la photo redressée) est un quadrilatère sur la photo d'origine. On découpe
+   ce quadrilatère en pleine définition et on le remet droit. vers : pixels de la photo redressée → pixels d'origine. */
+function photoBoiteRedressee(origine, full, vers, c) {
+  const FW = full.width, FH = full.height, x0 = c.x0 * FW, y0 = c.y0 * FH, w = (c.x1 - c.x0) * FW, h = (c.y1 - c.y0) * FH;
+  const q = [[x0, y0], [x0 + w, y0], [x0 + w, y0 + h], [x0, y0 + h]].map(p => appliquer(vers, p[0], p[1]));
+  const bx0 = Math.max(0, Math.floor(Math.min(...q.map(p => p[0])))), by0 = Math.max(0, Math.floor(Math.min(...q.map(p => p[1]))));
+  const bx1 = Math.min(origine.naturalWidth, Math.ceil(Math.max(...q.map(p => p[0])))), by1 = Math.min(origine.naturalHeight, Math.ceil(Math.max(...q.map(p => p[1]))));
+  // définition native : longueur des côtés du quadrilatère sur la photo d'origine
+  const lw = (Math.hypot(q[1][0] - q[0][0], q[1][1] - q[0][1]) + Math.hypot(q[2][0] - q[3][0], q[2][1] - q[3][1])) / 2;
+  const lh = (Math.hypot(q[3][0] - q[0][0], q[3][1] - q[0][1]) + Math.hypot(q[2][0] - q[1][0], q[2][1] - q[1][1])) / 2;
+  const k = Math.min(1, HD_MAX / Math.max(lw, lh)), OW = Math.max(1, Math.round(lw * k)), OH = Math.max(1, Math.round(lh * k));
+  const kb = Math.min(1, HD_MAX * 1.5 / Math.max(bx1 - bx0, by1 - by0, 1));
+  const src = document.createElement('canvas');
+  src.width = Math.max(1, Math.round((bx1 - bx0) * kb)); src.height = Math.max(1, Math.round((by1 - by0) * kb));
+  src.getContext('2d').drawImage(origine, bx0, by0, bx1 - bx0, by1 - by0, 0, 0, src.width, src.height);
+  // pixel de sortie → pixel de la photo redressée → pixel d'origine → pixel du morceau découpé
+  const Hs = produit([kb, 0, -bx0 * kb, 0, kb, -by0 * kb, 0, 0, 1], produit(vers, [w / OW, 0, x0, 0, h / OH, y0, 0, 0, 1]));
+  const out = deformer(src.getContext('2d').getImageData(0, 0, src.width, src.height), Hs, OW, OH, 'bord');
+  src.width = src.height = 0;
+  const cv = document.createElement('canvas');
+  cv.width = OW; cv.height = OH;
+  cv.getContext('2d').putImageData(new ImageData(out.data, OW, OH), 0, 0);
+  return cv;
+}
 function photoBoite(origine, W, H, c) {
   const cx = c.x0 * W, cy = c.y0 * H, cw = (c.x1 - c.x0) * W, ch = (c.y1 - c.y0) * H;
   const k = Math.min(1, HD_MAX / Math.max(cw, ch)), cv = document.createElement('canvas');
@@ -119,7 +144,8 @@ function miniature(cv) {
 }
 
 /* Lit les cases (dans l'ordre de flashage). opts : { fort, memoire, surProgres(i, n), arret: () => bool,
-   origine: { image, largeur, hauteur } (photo d'origine, pour la photo de chaque boîte en pleine définition) }.
+   origine: { image, largeur, hauteur, versOrigine, redressee } (photo d'origine, pour la photo de chaque boîte en
+   pleine définition ; versOrigine si la photo a été redressée) }.
    Renvoie [{ c, lignes, mini, hd, hdTaille }] pour les cases lues (moins si la lecture a été arrêtée). */
 export async function lireCases(full, cases, opts) {
   await regler(opts);
@@ -127,10 +153,12 @@ export async function lireCases(full, cases, opts) {
   for (let i = 0; i < cases.length; i++) {
     if (opts.arret && opts.arret()) break;
     const cv = decouper(full, cases[i]), img = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
-    const o = opts.origine, hdCv = o ? photoBoite(o.image, o.largeur, o.hauteur, cases[i]) : cv;
+    const o = opts.origine;
+    let hdCv = cv;
+    if (o) { try { hdCv = o.redressee ? photoBoiteRedressee(o.image, full, o.versOrigine, cases[i]) : photoBoite(o.image, o.largeur, o.hauteur, cases[i]); } catch (e) { hdCv = cv; } }
     const [r, mini, hd] = await Promise.all([appel({ type: 'lire', buf: img.data.buffer, w: img.width, h: img.height }, [img.data.buffer]), miniature(hdCv), enJPEG(hdCv, 0.92)]);
     out.push({ c: cases[i], lignes: r.lignes, mini: mini, hd: hd, hdTaille: hdCv.width + ' × ' + hdCv.height });
-    hdCv.width = hdCv.height = 0;
+    if (hdCv !== cv) hdCv.width = hdCv.height = 0;
     if (opts.surProgres) opts.surProgres(i + 1, cases.length);
   }
   return out;

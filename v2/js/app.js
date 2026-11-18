@@ -686,7 +686,8 @@ function majGrille() {
   $('#n-cols').textContent = editeur.cols(); $('#n-rangs').textContent = editeur.rangs();
   const n = editeur.nombre();
   const mpx = photoPrise ? Math.round(photoPrise.largeur * photoPrise.hauteur / 1e5) / 10 : 0;
-  $('#grille-info').textContent = pluriel(n, 'boîte', 'boîtes') + (mpx ? ' · photo ' + String(mpx).replace('.', ',') + ' Mpx' : '') + ' · touchez une case pour l\'ignorer';
+  $('#grille-info').textContent = pluriel(n, 'boîte', 'boîtes') + (mpx ? ' · photo ' + String(mpx).replace('.', ',') + ' Mpx' : '') +
+    (photoPrise && photoPrise.redressee ? ' · redressée' : '') + ' · touchez une case pour l\'ignorer';
   const b = $('#btn-lire'); b.textContent = 'Lire ' + pluriel(n, 'boîte', 'boîtes'); b.disabled = !n;
 }
 function majSens(sens) { P.basGrille.querySelectorAll('[data-sens]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sens === (sens === 'v' ? 'v' : 'h')))); }
@@ -732,7 +733,7 @@ $('#btn-lire').addEventListener('click', async () => {
     lectureTexte('Lecture des boîtes · 0 / ' + cases.length, 0);
     lus = await Moteur.lireCases(photoPrise.full, cases, {
       fort: S.lireReglages().fort, memoire: memoireDe(lieu), arret: () => etat.arret,
-      origine: { image: photoPrise.origine, largeur: photoPrise.largeur, hauteur: photoPrise.hauteur },
+      origine: { image: photoPrise.origine, largeur: photoPrise.largeur, hauteur: photoPrise.hauteur, versOrigine: photoPrise.versOrigine, redressee: photoPrise.redressee },
       surProgres: (i, n) => {
         const reste = (Date.now() - debut) / i * (n - i) / 1000;
         lectureTexte('Lecture des boîtes · ' + i + ' / ' + n + (i < n && i > 1 ? ' · encore ' + (reste < 60 ? Math.ceil(reste) + ' s' : Math.ceil(reste / 60) + ' min') : ''), i / n);

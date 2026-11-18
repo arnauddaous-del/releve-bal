@@ -3,6 +3,7 @@
    Rien n'est enregistré ni envoyé pendant la visée : les images de l'aperçu restent dans la mémoire du téléphone. */
 import { grilleAuto, petite } from './grille.js';
 import { BalCore as C } from './moteur/regles.mjs';
+import { estimer, redresserPixels, inverse, appliquer } from './moteur/redresser.mjs';
 
 export function cameraPossible() {
   return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia) && window.isSecureContext !== false;
@@ -49,8 +50,17 @@ export async function ouvrirCamera(video, calque, surGuide) {
     // les boîtes vues, une fois sur deux (environ une fois par seconde)
     if (tour++ % 2 === 0) {
       // la grille n'est dessinée que si deux comptages de suite trouvent les mêmes colonnes et rangées
+      // même chemin que pour la photo : redressement si le bloc est vu de biais, puis comptage ; les cases sont ramenées
+      // sur l'aperçu (quadrilatères qui suivent l'inclinaison)
       let g = null;
-      try { g = grilleAuto(petite(video)); } catch (e) { g = null; }
+      try {
+        const s = petite(video), r = estimer(s);
+        if (r) {
+          const red = redresserPixels(s, r, 700), inv = inverse(red.H), W2 = red.image.width, H2 = red.image.height;
+          g = grilleAuto(red.image);
+          g.versVideo = (u, v) => { const p = appliquer(inv, u * W2, v * H2); return [p[0] / s.width, p[1] / s.height]; };
+        } else g = grilleAuto(s);
+      } catch (e) { g = null; }
       const meme = g && grille && g.cols.length === grille.cols.length && g.rows[0].length === grille.rows[0].length;
       vue = meme && bouge <= 14 ? g : null;
       grille = g;
@@ -76,7 +86,14 @@ export async function ouvrirCamera(video, calque, surGuide) {
     if (!vue || !video.videoWidth) return;
     const vw = video.videoWidth, vh = video.videoHeight, k = Math.min(W / vw, H / vh), ox = (W - vw * k) / 2, oy = (H - vh * k) / 2;
     g.strokeStyle = 'rgba(76,196,190,.9)'; g.lineWidth = 2;
-    C.cells(vue).forEach(c => { if (!c.off) g.strokeRect(ox + c.x0 * vw * k, oy + c.y0 * vh * k, (c.x1 - c.x0) * vw * k, (c.y1 - c.y0) * vh * k); });
+    const vers = vue.versVideo || ((u, v) => [u, v]);
+    C.cells(vue).forEach(c => {
+      if (c.off) return;
+      const q = [[c.x0, c.y0], [c.x1, c.y0], [c.x1, c.y1], [c.x0, c.y1]].map(p => vers(p[0], p[1]));
+      g.beginPath();
+      q.forEach((p, i) => { const x = ox + p[0] * vw * k, y = oy + p[1] * vh * k; if (i) g.lineTo(x, y); else g.moveTo(x, y); });
+      g.closePath(); g.stroke();
+    });
   }
   analyser();
 

@@ -2,8 +2,8 @@
    Ses caches commencent par « imprimbal2- » : la V1 (caches « releve-bal- ») ne les efface pas,
    et celui-ci n'efface jamais ceux de la V1.
    APP et COQUILLE sont réécrits par outils/maj_sw.py : ne pas les modifier à la main. */
-var APP = 'imprimbal2-app-2fbb5098e3';
-var COQUILLE = ["css/app.css", "icons/apple-touch-icon.png", "icons/favicon-48.png", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "index.html", "js/app.js", "js/camera.js", "js/export.js", "js/grille.js", "js/import-v1.js", "js/lecteur.js", "js/moteur-client.js", "js/moteur/bloc.mjs", "js/moteur/ctc.mjs", "js/moteur/lecture.mjs", "js/moteur/lexique.mjs", "js/moteur/lignes.mjs", "js/moteur/prenoms.mjs", "js/moteur/regles.mjs", "js/stockage.js", "manifest.webmanifest"];
+var APP = 'imprimbal2-app-821f38933d';
+var COQUILLE = ["css/app.css", "icons/apple-touch-icon.png", "icons/favicon-48.png", "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "index.html", "js/app.js", "js/camera.js", "js/export.js", "js/grille.js", "js/import-v1.js", "js/lecteur.js", "js/moteur-client.js", "js/moteur/bloc.mjs", "js/moteur/ctc.mjs", "js/moteur/lecture.mjs", "js/moteur/lexique.mjs", "js/moteur/lignes.mjs", "js/moteur/prenoms.mjs", "js/moteur/redresser.mjs", "js/moteur/regles.mjs", "js/stockage.js", "manifest.webmanifest"];
 var PREFIXE_APP = 'imprimbal2-app-';
 /* Les modèles de lecture (dossier modeles/, environ 26 Mo, 64 Mo avec la lecture renforcée) ont leur propre cache,
    rempli au premier usage et gardé d'une version de l'app à l'autre. Un modèle qui change doit changer de nom. */

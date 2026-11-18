@@ -12,6 +12,8 @@ import { BalPaddle as P } from '../../js/moteur/lecture.mjs';
 import { lireLignes, alphabetPour } from '../../js/moteur/lignes.mjs';
 import { creerLexique } from '../../js/moteur/lexique.mjs';
 import { lireBloc } from '../../js/moteur/bloc.mjs';
+import { estimer, redresserPixels } from '../../js/moteur/redresser.mjs';
+import { createCanvas } from '@napi-rs/canvas';
 import { dessiner, pixels } from '../image.mjs';
 import { avecMemoire } from '../memoire.mjs';
 
@@ -52,15 +54,25 @@ export async function creerV2(options = {}) {
   // même découpe que la V1 (moteurs/v1.mjs), avec les fonctions de v2/js/moteur/regles.mjs
   function grille(photo, forcee, petite) {
     const k = Math.min(1, 4200 / Math.max(photo.width, photo.height));
-    const full = k === 1 ? photo.canvas : dessiner(photo.canvas, 0, 0, photo.width, photo.height, Math.round(photo.width * k), Math.round(photo.height * k));
-    const small = petite || pixels(dessiner(full, 0, 0, full.width, full.height, 700, Math.max(1, Math.round(full.height * 700 / full.width)), 'high'));
+    let full = k === 1 ? photo.canvas : dessiner(photo.canvas, 0, 0, photo.width, photo.height, Math.round(photo.width * k), Math.round(photo.height * k));
+    const reduire = c => pixels(dessiner(c, 0, 0, c.width, c.height, 700, Math.max(1, Math.round(c.height * 700 / c.width)), 'high'));
+    let small = petite || reduire(full), redresse = null;
+    // photo prise de biais : redressée avant le comptage et la lecture (redresser.mjs)
+    if (options.redresser && !petite) {
+      const r = estimer(small);
+      if (r) {
+        const red = redresserPixels(pixels(full), r, 4200), c = createCanvas(red.image.width, red.image.height), g = c.getContext('2d'), id = g.createImageData(c.width, c.height);
+        id.data.set(red.image.data); g.putImageData(id, 0, 0);
+        full = c; small = reduire(full); redresse = r.angle;
+      }
+    }
     const a = C.autoCount(small);
     let g = C.uniformGrid(a.cols, a.rows, a.frame);
     if (a.dividers && a.dividers.length === a.cols - 1) g.cols = a.dividers;
     let grid = C.fitGrid(small, g, a.dividers ? 'rows' : 'detect');
     const auto = { cols: a.cols, rows: a.rows };
     if (forcee && (forcee.cols !== a.cols || forcee.rows !== a.rows)) grid = C.fitGrid(small, C.uniformGrid(forcee.cols, forcee.rows, grid.frame), 'detect');
-    return { full: full, grid: grid, auto: auto, cols: grid.cols.length + 1, rows: grid.rows[0].length + 1 };
+    return { full: full, grid: grid, auto: auto, cols: grid.cols.length + 1, rows: grid.rows[0].length + 1, redresse: redresse };
   }
 
   async function lignesDeCase(full, c) {
@@ -87,8 +99,8 @@ export async function creerV2(options = {}) {
   /* Avec --memoire, les lignes lues sur une photo sont gardées dans local/lignes/ : changer une règle
      d'interprétation (regles.mjs, bloc.mjs) se mesure alors sans relire les photos. La clé tient compte des options
      de lecture et du contenu des modules de lecture. */
-  const cleLecture = crypto.createHash('sha1').update(JSON.stringify([options.socle, options.fort, options.lexique, options.reglagesLexique, options.lexiquePartout, options.poidsLexique, options.largeur, options.poidsFort]))
-    .update(['lecture.mjs', 'lignes.mjs', 'ctc.mjs', 'lexique.mjs', 'prenoms.mjs'].map(f => fs.readFileSync(path.join(DEPOT, 'v2', 'js', 'moteur', f), 'utf8')).join('')).digest('hex').slice(0, 12);
+  const cleLecture = crypto.createHash('sha1').update(JSON.stringify([options.redresser, options.socle, options.fort, options.lexique, options.reglagesLexique, options.lexiquePartout, options.poidsLexique, options.largeur, options.poidsFort]))
+    .update(['lecture.mjs', 'lignes.mjs', 'ctc.mjs', 'lexique.mjs', 'prenoms.mjs', 'redresser.mjs'].map(f => fs.readFileSync(path.join(DEPOT, 'v2', 'js', 'moteur', f), 'utf8')).join('')).digest('hex').slice(0, 12);
 
   async function lirePhoto(photo, opt = {}) {
     const memo = options.memoire && !opt.garderImages && !opt.petite && opt.cle
