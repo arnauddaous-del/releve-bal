@@ -98,6 +98,19 @@ function decouper(full, c) {
   g.drawImage(full, cx, cy, cw, ch, 0, 0, cv.width, cv.height);
   return cv;
 }
+/* Photo d'une boîte en pleine définition, découpée dans la photo d'origine (pixels du capteur, sans réduction ;
+   3000 px au plus de côté, au-delà rien ne se voit de plus à l'écran). */
+const HD_MAX = 3000;
+function photoBoite(origine, W, H, c) {
+  const cx = c.x0 * W, cy = c.y0 * H, cw = (c.x1 - c.x0) * W, ch = (c.y1 - c.y0) * H;
+  const k = Math.min(1, HD_MAX / Math.max(cw, ch)), cv = document.createElement('canvas');
+  cv.width = Math.max(1, Math.round(cw * k)); cv.height = Math.max(1, Math.round(ch * k));
+  const g = cv.getContext('2d');
+  g.imageSmoothingQuality = 'high';
+  g.drawImage(origine, cx, cy, cw, ch, 0, 0, cv.width, cv.height);
+  return cv;
+}
+const enJPEG = (cv, q) => new Promise(ok => cv.toBlob(b => ok(b), 'image/jpeg', q));
 function miniature(cv) {
   const t = document.createElement('canvas'), k = 480 / cv.width;
   t.width = 480; t.height = Math.max(1, Math.round(cv.height * k));
@@ -105,16 +118,19 @@ function miniature(cv) {
   return new Promise(ok => t.toBlob(b => ok(b), 'image/jpeg', 0.72));
 }
 
-/* Lit les cases (dans l'ordre de flashage). opts : { fort, memoire, surProgres(i, n), arret: () => bool }.
-   Renvoie [{ c, lignes, mini }] pour les cases lues (moins si la lecture a été arrêtée). */
+/* Lit les cases (dans l'ordre de flashage). opts : { fort, memoire, surProgres(i, n), arret: () => bool,
+   origine: { image, largeur, hauteur } (photo d'origine, pour la photo de chaque boîte en pleine définition) }.
+   Renvoie [{ c, lignes, mini, hd, hdTaille }] pour les cases lues (moins si la lecture a été arrêtée). */
 export async function lireCases(full, cases, opts) {
   await regler(opts);
   const out = [];
   for (let i = 0; i < cases.length; i++) {
     if (opts.arret && opts.arret()) break;
     const cv = decouper(full, cases[i]), img = cv.getContext('2d').getImageData(0, 0, cv.width, cv.height);
-    const [r, mini] = await Promise.all([appel({ type: 'lire', buf: img.data.buffer, w: img.width, h: img.height }, [img.data.buffer]), miniature(cv)]);
-    out.push({ c: cases[i], lignes: r.lignes, mini: mini });
+    const o = opts.origine, hdCv = o ? photoBoite(o.image, o.largeur, o.hauteur, cases[i]) : cv;
+    const [r, mini, hd] = await Promise.all([appel({ type: 'lire', buf: img.data.buffer, w: img.width, h: img.height }, [img.data.buffer]), miniature(hdCv), enJPEG(hdCv, 0.92)]);
+    out.push({ c: cases[i], lignes: r.lignes, mini: mini, hd: hd, hdTaille: hdCv.width + ' × ' + hdCv.height });
+    hdCv.width = hdCv.height = 0;
     if (opts.surProgres) opts.surProgres(i + 1, cases.length);
   }
   return out;
@@ -137,7 +153,7 @@ export function boites(lus, uid, numeroPhoto) {
     return {
       id: uid(), photo: numeroPhoto, row: l.c.r + 1, col: l.c.c + 1, name: name, apt: p.apt, pub: p.pub, raw: p.raw || '',
       empty: rien && !p.raw, check: (rien && !!lines.length) || (!rien && (p.conf < 75 || doute)) || !!accord[i].verifier || !!p.hors,
-      alt: alt, sug: [], orig: name, ok: false, mini: !!l.mini
+      alt: alt, sug: [], orig: name, ok: false, mini: !!l.mini, hd: !!l.hd, hdTaille: l.hdTaille || ''
     };
   });
 }

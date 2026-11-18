@@ -118,7 +118,23 @@ with sync_playwright() as p:
         for b, a in zip(lus, attendu):
             print('      %-40s | lu : %s | %s | %s' % (a[1][:40], b['name'].replace('\n', ' / '), b['apt'], b['pub']))
     mini = page.evaluate('''() => new Promise(ok => { const r = indexedDB.open('imprimbal2'); r.onsuccess = () => { const c = r.result.transaction('images').objectStore('images').count(); c.onsuccess = () => ok(c.result); }; })''')
-    check('miniatures des boîtes rangées dans IndexedDB', mini == n, mini)
+    check('miniature et photo pleine définition de chaque boîte dans IndexedDB', mini == 2 * n, mini)
+    hd = page.evaluate('''() => new Promise(ok => { const id = location.hash.split('/')[2], b = JSON.parse(localStorage.getItem('imprimbal2:lieu:' + id)).boxes[0];
+      const r = indexedDB.open('imprimbal2'); r.onsuccess = () => { const q = r.result.transaction('images').objectStore('images').get('photo:' + b.id);
+      q.onsuccess = () => createImageBitmap(q.result.blob).then(bm => ok({ w: bm.width, h: bm.height, taille: b.hdTaille })); }; })''')
+    from PIL import Image as _I
+    W0, H0 = _I.open(PHOTO).size
+    check('photo de la boîte à la définition de la photo d\'origine', hd['w'] > 0 and abs(hd['w'] - W0 / cols) < W0 / cols * 0.6 and hd['taille'] == '%d × %d' % (hd['w'], hd['h']), hd)
+    page.click('#liste-boites > li:nth-child(1) [data-act="corriger"]')
+    page.wait_for_selector('.corr-photo[src]', timeout=5000)
+    page.click('.corr-photo')
+    page.wait_for_selector('#visionneuse:not([hidden])', timeout=5000)
+    page.wait_for_function('document.querySelector("#vis-image").naturalWidth > 0', timeout=5000)
+    check('la photo de la boîte s\'ouvre en plein écran, en pleine définition', page.evaluate('document.querySelector("#vis-image").naturalWidth') == hd['w'], page.inner_text('#vis-titre'))
+    page.screenshot(path=os.path.join(SHOTS, '3b-visionneuse.png'))
+    page.go_back(); page.wait_for_timeout(300)
+    check('Retour ferme la photo, la feuille reste ouverte', page.is_hidden('#visionneuse') and page.is_visible('#c-noms'))
+    page.go_back(); page.wait_for_timeout(400)
 
     print('Résultat : vérifier, corriger, réordonner, supprimer')
     nv = page.eval_on_selector_all('#liste-verif > li', 'l => l.length')

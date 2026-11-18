@@ -5,7 +5,8 @@
 import { BalCore as C } from './moteur/regles.mjs';
 
 /* Charge une photo (fichier ou Blob) en deux tailles : full (4200 px au plus, pour lire) et small (700 px de large,
-   pour compter les boîtes), exactement comme la V1. */
+   pour compter les boîtes), exactement comme la V1. Garde aussi l'image d'origine, en pleine définition (origine) :
+   la photo de chaque boîte en est découpée sans perte de définition. */
 export function chargerPhoto(blob) {
   return new Promise((ok, ko) => {
     const url = URL.createObjectURL(blob), img = new Image();
@@ -15,7 +16,7 @@ export function chargerPhoto(blob) {
       const full = document.createElement('canvas');
       full.width = Math.round(W * k); full.height = Math.round(H * k);
       full.getContext('2d').drawImage(img, 0, 0, full.width, full.height);
-      ok({ full: full, small: petite(full) });
+      ok({ full: full, small: petite(full), origine: img, largeur: W, hauteur: H });
     };
     img.onerror = () => { URL.revokeObjectURL(url); ko(new Error('photo illisible')); };
     img.src = url;

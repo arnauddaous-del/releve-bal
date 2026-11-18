@@ -88,7 +88,10 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
 - `localStorage`, clés préfixées `imprimbal2:` : `imprimbal2:lieux` (liste des identifiants), `imprimbal2:lieu:<id>`
   (un lieu : tournée, nom, boîtes, mémoire de noms, sens de lecture), `imprimbal2:reglages`, `imprimbal2:import-v1`.
   `stockage.js` refuse d'écrire une clé sans ce préfixe.
-- IndexedDB `imprimbal2`, magasin `images` : miniatures (`mini:<id de boîte>`) et, plus tard, photos.
+- IndexedDB `imprimbal2`, magasin `images` : miniatures (`mini:<id de boîte>`, 480 px, pour les listes) et photo de
+  chaque boîte en pleine définition (`photo:<id>`, découpée dans la photo d'origine sans réduction, 3000 px au plus,
+  JPEG 0,92 ; box.hd et box.hdTaille). La lecture, elle, garde la découpe de la V1 (photo réduite à 4200 px).
+  Visionneuse plein écran (pincer, double toucher, Retour) sur les photos des boîtes à vérifier et de la correction.
 - La clé de la V1, `releve-bal-v4`, est seulement lue (`localStorage.getItem` dans `import-v1.js`).
 - Les boîtes gardent la forme de la V1 (`name` avec un destinataire par ligne, `apt`, `pub`, `check`, `ok`, `alt`,
   `sug`, `orig`…), sans `thumb` : `mini: true` signale une miniature en base.

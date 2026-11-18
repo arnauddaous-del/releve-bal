@@ -113,7 +113,10 @@ function retourAccueil() {
   if (lieuInterne) history.back();
   else { history.replaceState(null, '', urlAccueil()); route(); }
 }
-window.addEventListener('popstate', () => { if (feuilleOuverte) fermerFeuille(true); route(); });
+window.addEventListener('popstate', () => {
+  if (visionneuseOuverte) { fermerVisionneuse(true); return; }
+  if (feuilleOuverte) fermerFeuille(true); route();
+});
 
 /* ---------- accueil ---------- */
 const liste = $('#liste-lieux');
@@ -225,8 +228,10 @@ liste.addEventListener('pointercancel', finGlisse);
 /* ---------- écran Résultat : les boîtes d'un lieu ---------- */
 let urls = [];
 function libererUrls() { urls.forEach(u => URL.revokeObjectURL(u)); urls = []; }
+/* data-mini : miniature ; data-hd en plus : la photo de la boîte en pleine définition (sinon la miniature). */
 function chargerMini(img) {
-  S.lireImage('mini:' + img.dataset.mini).then(r => {
+  const id = img.dataset.mini;
+  (img.dataset.hd ? S.lireImage('photo:' + id).then(r => r || S.lireImage('mini:' + id)) : S.lireImage('mini:' + id)).then(r => {
     if (!r || !r.blob || !img.isConnected) { img.remove(); return; }
     const u = URL.createObjectURL(r.blob); urls.push(u);
     img.onload = () => img.classList.add('prete');
@@ -288,7 +293,7 @@ function rendreLieu(lieu) {
     const i = lieu.boxes.indexOf(b), puces = (b.alt || []).map((a, k) =>
       '<button class="puce" type="button" data-act="alt" data-k="' + k + '">Autre lecture : <b>' + esc(a.replace(/\n/g, ' / ')) + '</b></button>').join('');
     return '<li class="verif" data-id="' + esc(b.id) + '">' +
-      (b.mini ? '<img class="verif-photo" alt="Photo de la boîte ' + (i + 1) + '" data-mini="' + esc(b.id) + '">' : '') +
+      (b.mini ? '<img class="verif-photo" alt="Photo de la boîte ' + (i + 1) + ', touchez pour agrandir" data-mini="' + esc(b.id) + '"' + (b.hd ? ' data-hd="1"' : '') + '>' : '') +
       '<div class="verif-texte"><span class="num">' + (i + 1) + '</span><p class="noms">' + nomsHTML(b) + '</p></div>' +
       '<p class="detail">' + detailHTML(b, false) + '</p>' +
       (puces ? '<div class="puces">' + puces + '</div>' : '') +
@@ -339,7 +344,7 @@ function ouvrirCorrection(id) {
   corrId = id;
   const puces = (b.alt || []).map((a, k) => '<button class="puce" type="button" data-act="c-alt" data-k="' + k + '">Autre lecture : <b>' + esc(a.replace(/\n/g, ' / ')) + '</b></button>').join('');
   ouvrirFeuille('<h2 class="feuille-titre">Boîte ' + (i + 1) + '</h2>' +
-    (b.mini ? '<img class="corr-photo" alt="Photo de la boîte" data-mini="' + esc(b.id) + '">' : '') +
+    (b.mini ? '<img class="corr-photo" alt="Photo de la boîte, touchez pour agrandir" data-mini="' + esc(b.id) + '"' + (b.hd ? ' data-hd="1"' : '') + '>' : '') +
     '<label class="champ"><span>Noms, un par ligne</span><textarea id="c-noms" rows="' + Math.max(2, nomsDe(b).length) + '" placeholder="BAL Sans Nom" spellcheck="false" autocapitalize="words">' + esc(b.name) + '</textarea></label>' +
     (puces ? '<div class="puces">' + puces + '</div>' : '') +
     '<label class="champ"><span>Appartement</span><input id="c-apt" type="text" maxlength="20" autocomplete="off" autocapitalize="characters" value="' + esc(b.apt) + '"></label>' +
@@ -393,7 +398,7 @@ function supprimerBoite(id) {
   enregistrer(lieu); rendreLieu(lieu); vibrer(15);
   bandeau('Boîte supprimée', {
     action: 'Annuler',
-    surFin: () => { if (b.mini) S.supprimerImages(['mini:' + b.id]).catch(() => {}); },
+    surFin: () => { if (b.mini || b.hd) S.supprimerImages(['mini:' + b.id, 'photo:' + b.id]).catch(() => {}); },
     surAction: () => { const l = S.lireLieu(lieu.id); if (!l) return; l.boxes.splice(Math.min(i, l.boxes.length), 0, b); enregistrer(l); if (lieuCourant === l.id) rendreLieu(l); vibrer(8); }
   });
 }
@@ -464,6 +469,81 @@ async function exporter(type) {
   const res = await Export.partager(blob, Export.nomFichier(lieu) + '.' + type);
   if (res === 'telecharge') bandeau('Fichier enregistré dans les téléchargements');
 }
+
+/* ---------- visionneuse : photo d'une boîte en pleine définition, pincer pour zoomer ---------- */
+const vis = $('#visionneuse'), visImg = $('#vis-image');
+let visionneuseOuverte = false, visUrl = '', vz = { k: 1, x: 0, y: 0, base: 1 };
+const doigts = new Map();
+let pince = null, tirer = null, dernierToucher = 0;
+function visAppliquer() { visImg.style.transform = 'translate(' + vz.x + 'px,' + vz.y + 'px) scale(' + vz.k + ')'; }
+function visBorner() {
+  const W = vis.clientWidth, H = vis.clientHeight, w = visImg.naturalWidth * vz.k, h = visImg.naturalHeight * vz.k;
+  vz.x = w <= W ? (W - w) / 2 : Math.min(0, Math.max(W - w, vz.x));
+  vz.y = h <= H ? (H - h) / 2 : Math.min(0, Math.max(H - h, vz.y));
+}
+function visZoom(k, cx, cy) {
+  k = Math.max(vz.base, Math.min(Math.max(vz.base * 8, 3), k));
+  vz.x = cx - (cx - vz.x) * k / vz.k; vz.y = cy - (cy - vz.y) * k / vz.k; vz.k = k;
+  visBorner(); visAppliquer();
+}
+function visAjuster() {
+  if (!visImg.naturalWidth) return;
+  vz.base = Math.min(vis.clientWidth / visImg.naturalWidth, vis.clientHeight / visImg.naturalHeight);
+  vz.k = vz.base; vz.x = vz.y = 0; visBorner(); visAppliquer();
+}
+async function ouvrirVisionneuse(id, titre) {
+  const r = (await S.lireImage('photo:' + id).catch(() => null)) || (await S.lireImage('mini:' + id).catch(() => null));
+  if (!r || !r.blob) return;
+  if (visUrl) URL.revokeObjectURL(visUrl);
+  visUrl = URL.createObjectURL(r.blob);
+  visImg.onload = () => { visAjuster(); $('#vis-titre').textContent = titre + ' · ' + visImg.naturalWidth + ' × ' + visImg.naturalHeight + ' px'; };
+  visImg.src = visUrl;
+  $('#vis-titre').textContent = titre;
+  $('#vis-aide').style.opacity = '1'; setTimeout(() => { $('#vis-aide').style.opacity = '0'; }, 2500);
+  vis.hidden = false; visionneuseOuverte = true;
+  history.pushState(Object.assign({}, history.state, { visionneuse: true }), '');
+  $('#btn-fermer-vis').focus({ preventScroll: true });
+}
+function fermerVisionneuse(dejaRetire) {
+  if (!visionneuseOuverte) return;
+  visionneuseOuverte = false; vis.hidden = true; doigts.clear(); pince = tirer = null;
+  visImg.removeAttribute('src'); if (visUrl) { URL.revokeObjectURL(visUrl); visUrl = ''; }
+  if (!dejaRetire && history.state && history.state.visionneuse) history.back();
+}
+$('#btn-fermer-vis').addEventListener('click', () => fermerVisionneuse(false));
+window.addEventListener('resize', () => { if (visionneuseOuverte) visAjuster(); });
+vis.addEventListener('pointerdown', e => {
+  if (e.target.closest('button')) return;
+  doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  try { vis.setPointerCapture(e.pointerId); } catch (err) {}
+  if (doigts.size === 2) {
+    const [a, b] = Array.from(doigts.values());
+    pince = { d: Math.hypot(a.x - b.x, a.y - b.y), k: vz.k }; tirer = null;
+  } else if (doigts.size === 1) {
+    const t = Date.now();
+    if (t - dernierToucher < 300) { visZoom(vz.k > vz.base * 1.05 ? vz.base : vz.base * 3, e.clientX, e.clientY); dernierToucher = 0; }
+    else dernierToucher = t;
+    tirer = { x: e.clientX, y: e.clientY, ox: vz.x, oy: vz.y };
+  }
+});
+vis.addEventListener('pointermove', e => {
+  if (!doigts.has(e.pointerId)) return;
+  doigts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+  if (pince && doigts.size === 2) {
+    const [a, b] = Array.from(doigts.values());
+    visZoom(pince.k * Math.hypot(a.x - b.x, a.y - b.y) / pince.d, (a.x + b.x) / 2, (a.y + b.y) / 2);
+  } else if (tirer && doigts.size === 1) {
+    vz.x = tirer.ox + e.clientX - tirer.x; vz.y = tirer.oy + e.clientY - tirer.y; visBorner(); visAppliquer();
+  }
+});
+const visFin = e => { doigts.delete(e.pointerId); if (doigts.size < 2) pince = null; if (!doigts.size) tirer = null; };
+vis.addEventListener('pointerup', visFin); vis.addEventListener('pointercancel', visFin);
+vis.addEventListener('wheel', e => { e.preventDefault(); visZoom(vz.k * (e.deltaY < 0 ? 1.15 : 1 / 1.15), e.clientX, e.clientY); }, { passive: false });
+document.addEventListener('click', e => {
+  const img = e.target.closest('.verif-photo, .corr-photo'); if (!img || !img.dataset.mini) return;
+  const lieu = lieuActuel(), i = lieu ? lieu.boxes.findIndex(b => b.id === img.dataset.mini) : -1;
+  ouvrirVisionneuse(img.dataset.mini, i >= 0 ? 'Boîte ' + (i + 1) : 'Boîte');
+});
 
 /* ---------- écran Photo : caméra, grille, lecture ---------- */
 const P = {
@@ -558,7 +638,8 @@ function majGrille() {
   if (!editeur) return;
   $('#n-cols').textContent = editeur.cols(); $('#n-rangs').textContent = editeur.rangs();
   const n = editeur.nombre();
-  $('#grille-info').textContent = pluriel(n, 'boîte', 'boîtes') + ' · touchez une case pour l\'ignorer';
+  const mpx = photoPrise ? Math.round(photoPrise.largeur * photoPrise.hauteur / 1e5) / 10 : 0;
+  $('#grille-info').textContent = pluriel(n, 'boîte', 'boîtes') + (mpx ? ' · photo ' + String(mpx).replace('.', ',') + ' Mpx' : '') + ' · touchez une case pour l\'ignorer';
   const b = $('#btn-lire'); b.textContent = 'Lire ' + pluriel(n, 'boîte', 'boîtes'); b.disabled = !n;
 }
 function majSens(sens) { P.basGrille.querySelectorAll('[data-sens]').forEach(b => b.setAttribute('aria-checked', String(b.dataset.sens === (sens === 'v' ? 'v' : 'h')))); }
@@ -604,6 +685,7 @@ $('#btn-lire').addEventListener('click', async () => {
     lectureTexte('Lecture des boîtes · 0 / ' + cases.length, 0);
     lus = await Moteur.lireCases(photoPrise.full, cases, {
       fort: S.lireReglages().fort, memoire: memoireDe(lieu), arret: () => etat.arret,
+      origine: { image: photoPrise.origine, largeur: photoPrise.largeur, hauteur: photoPrise.hauteur },
       surProgres: (i, n) => {
         const reste = (Date.now() - debut) / i * (n - i) / 1000;
         lectureTexte('Lecture des boîtes · ' + i + ' / ' + n + (i < n && i > 1 ? ' · encore ' + (reste < 60 ? Math.ceil(reste) + ' s' : Math.ceil(reste / 60) + ' min') : ''), i / n);
@@ -622,9 +704,12 @@ $('#btn-lire').addEventListener('click', async () => {
   const l = S.lireLieu(lieu.id); if (!l) return;
   l.photoCount = (l.photoCount || 0) + 1;
   const nouvelles = Moteur.boites(lus, S.uid, l.photoCount);
-  await S.mettreImages(nouvelles.map((b, i) => (lus[i].mini ? { id: 'mini:' + b.id, lieu: l.id, type: 'mini', blob: lus[i].mini, date: Date.now() } : null)).filter(Boolean)).catch(() => {
-    nouvelles.forEach(b => { b.mini = false; });
+  const images = [];
+  nouvelles.forEach((b, i) => {
+    if (lus[i].mini) images.push({ id: 'mini:' + b.id, lieu: l.id, type: 'mini', blob: lus[i].mini, date: Date.now() });
+    if (lus[i].hd) images.push({ id: 'photo:' + b.id, lieu: l.id, type: 'photo', blob: lus[i].hd, date: Date.now() });
   });
+  await S.mettreImages(images).catch(() => { nouvelles.forEach(b => { b.mini = false; b.hd = false; }); });
   l.boxes = l.boxes.concat(nouvelles);
   if (!enregistrer(l)) return;
   S.demanderPersistance(); vibrer(15);

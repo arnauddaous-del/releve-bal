@@ -122,6 +122,18 @@
 </section>
 </div>
 
+<div class="visionneuse" id="visionneuse" role="dialog" aria-modal="true" aria-label="Photo de la boîte" hidden>
+  <img id="vis-image" alt="">
+  <div class="photo-haut">
+    <button class="rond sombre" id="btn-fermer-vis" type="button" aria-label="Fermer">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M3 3l12 12M15 3 3 15"/></svg>
+    </button>
+    <p class="photo-titre" id="vis-titre"></p>
+    <span class="rond" aria-hidden="true"></span>
+  </div>
+  <p class="vis-aide" id="vis-aide">Pincez ou touchez deux fois pour zoomer</p>
+</div>
+
 <div id="voile" class="voile" hidden></div>
 <div id="feuille" class="feuille" role="dialog" aria-modal="true" tabindex="-1" hidden><div id="feuille-corps"></div></div>
 <div id="bandeau" class="bandeau" role="status" aria-live="polite" hidden></div>
