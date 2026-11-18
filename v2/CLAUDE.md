@@ -46,13 +46,14 @@ transitions de 200 à 300 ms, feuilles qui montent du bas, cibles ≥ 44 px, « 
 confirmation, vibration légère sur validation et suppression. Textes courts, en français.
 
 ## Structure (pas d'étape de build, modules ES servis tels quels)
-- `index.html`, `css/app.css` : les écrans. Accueil (lieux en cartes), Résultat (`#ecran-lieu` : boîtes à vérifier en
-  grand, puis l'ordre de flashage avec poignée pour glisser), Photo (`#ecran-photo`, plein écran sombre : visée,
+- `index.html`, `css/app.css` : les écrans. Accueil (lieux en cartes), Résultat (`#ecran-lieu` : une seule liste dans
+  l'ordre de flashage, pastille « À vérifier » sur les boîtes concernées, toucher une boîte = correction ; à la demande
+  d'Arnaud le 18/11/2026 : pas de section « À vérifier » en haut, pas de poignée pour déplacer les boîtes), Photo (`#ecran-photo`, plein écran sombre : visée,
   puis grille, puis progression de la lecture), feuilles (nouveau relevé, correction d'une boîte, partage, réglages).
 - Sens de lecture « Horizontal / Vertical » (`lieu.scan`, gardé par lieu) : sur l'écran de la grille avant la lecture,
   et sur l'écran Résultat (pastille « Sens : … » sous le titre, ou menu « … ») pour remettre les boîtes déjà lues dans
   cet ordre, photo par photo, d'après leur rangée et colonne (`reordonner()` ; une boîte ajoutée à la main suit la
-  boîte qui la précède ; « Annuler » remet l'ordre d'avant).
+  boîte qui la précède ; « Annuler » remet l'ordre d'avant). C'est la seule façon de changer l'ordre.
 - `js/app.js` : interface et navigation (`#/lieu/<id>`, `#/lieu/<id>/photo` ; la touche Retour ferme les feuilles et
   l'écran Photo), mémoire de noms du lieu (comme la V1), mises à jour.
 - `js/camera.js` : getUserMedia (caméra arrière), ImageCapture.takePhoto quand il existe (pleine définition, Android),
@@ -99,7 +100,7 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
 - IndexedDB `imprimbal2`, magasin `images` : miniatures (`mini:<id de boîte>`, 480 px, pour les listes) et photo de
   chaque boîte en pleine définition (`photo:<id>`, découpée dans la photo d'origine sans réduction, 3000 px au plus,
   JPEG 0,92 ; box.hd et box.hdTaille). La lecture, elle, garde la découpe de la V1 (photo réduite à 4200 px).
-  Visionneuse plein écran (pincer, double toucher, Retour) sur les photos des boîtes à vérifier et de la correction.
+  Visionneuse plein écran (pincer, double toucher, Retour) sur la photo de la feuille de correction.
 - La clé de la V1, `releve-bal-v4`, est seulement lue (`localStorage.getItem` dans `import-v1.js`).
 - Les boîtes gardent la forme de la V1 (`name` avec un destinataire par ligne, `apt`, `pub`, `check`, `ok`, `alt`,
   `sug`, `orig`…), sans `thumb` : `mini: true` signale une miniature en base.

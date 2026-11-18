@@ -136,11 +136,8 @@ with sync_playwright() as p:
     check('Retour ferme la photo, la feuille reste ouverte', page.is_hidden('#visionneuse') and page.is_visible('#c-noms'))
     page.go_back(); page.wait_for_timeout(400)
 
-    print('Résultat : vérifier, corriger, réordonner, supprimer')
-    nv = page.eval_on_selector_all('#liste-verif > li', 'l => l.length')
-    if nv:
-        page.click('#liste-verif > li:first-child [data-act="ok"]')
-        check('« C\'est bon » retire la boîte des boîtes à vérifier', page.eval_on_selector_all('#liste-verif > li', 'l => l.length') == nv - 1)
+    print('Résultat : corriger, supprimer')
+    check('pas de section « À vérifier » en haut, pas de poignée pour déplacer', page.query_selector('#liste-verif') is None and page.query_selector('.poignee') is None)
     page.click('#liste-boites > li:nth-child(1) [data-act="corriger"]')
     page.wait_for_selector('#c-noms', timeout=3000)
     page.fill('#c-noms', 'DUPONT Essai')
@@ -149,14 +146,7 @@ with sync_playwright() as p:
     page.wait_for_timeout(400)
     b1 = page.evaluate('''() => { const id = location.hash.split('/')[2]; return JSON.parse(localStorage.getItem('imprimbal2:lieu:' + id)).boxes[0]; }''')
     check('correction gardée (nom, STOP PUB, confirmée)', b1['name'] == 'DUPONT Essai' and b1['pub'] == 'STOP PUB' and b1['ok'], b1['name'])
-    avant = page.evaluate('''() => { const id = location.hash.split('/')[2]; return JSON.parse(localStorage.getItem('imprimbal2:lieu:' + id)).boxes.map(b => b.id); }''')
-    h = page.query_selector('#liste-boites > li:nth-child(1) .poignee').bounding_box()
-    hauteur = page.query_selector('#liste-boites > li:nth-child(1)').bounding_box()['height']
-    page.mouse.move(h['x'] + h['width'] / 2, h['y'] + h['height'] / 2); page.mouse.down()
-    for k in range(1, 11): page.mouse.move(h['x'] + h['width'] / 2, h['y'] + h['height'] / 2 + k * hauteur * 2.1 / 10)
-    page.mouse.up(); page.wait_for_timeout(300)
     apres = page.evaluate('''() => { const id = location.hash.split('/')[2]; return JSON.parse(localStorage.getItem('imprimbal2:lieu:' + id)).boxes.map(b => b.id); }''')
-    check('glisser la poignée change l\'ordre de flashage', apres[2] == avant[0] and apres[0] == avant[1], 'boîte 1 → place 3')
     page.click('#liste-boites > li:nth-child(2) [data-act="corriger"]')
     page.wait_for_selector('[data-act="c-supprimer"]', timeout=3000)
     page.click('[data-act="c-supprimer"]')
@@ -187,7 +177,7 @@ with sync_playwright() as p:
     check('CSV : titre, ligne vide, en-tête, une ligne par boîte',
           texte[:3] == ['Tournée : 12', "Lieu : Résidence inventée, 1 rue de l'Exemple", 'Nombre de PRE : %d' % n] and texte[3] == '' and texte[4] == 'ordre_flashage;noms_prenoms;numero_appartement;pub' and len(texte) == 5 + n,
           texte[:6])
-    check('CSV : la boîte corrigée', any(l.startswith('3;DUPONT Essai;') and l.endswith(';STOP PUB') for l in texte))
+    check('CSV : la boîte corrigée', any(l.startswith('1;DUPONT Essai;') and l.endswith(';STOP PUB') for l in texte))
     page.click('#btn-partager')
     with page.expect_download() as dl:
         page.click('[data-act="exp-xlsx"]')

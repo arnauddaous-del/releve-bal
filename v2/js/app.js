@@ -290,26 +290,11 @@ function rendreLieu(lieu) {
   bs.innerHTML = '<span style="color:var(--second);font-weight:400">Sens :</span> ' + (lieu.scan === 'v' ? FLECHE_V : FLECHE_H) + ' ' + (lieu.scan === 'v' ? 'Vertical' : 'Horizontal');
   bs.setAttribute('aria-label', 'Sens de lecture : ' + (lieu.scan === 'v' ? 'vertical' : 'horizontal') + '. Changer');
   libererUrls();
-  // les boîtes à vérifier d'abord, en grand, avec leur photo
-  $('#zone-verif').hidden = !aVerifier.length;
-  $('#liste-verif').innerHTML = aVerifier.map(b => {
-    const i = lieu.boxes.indexOf(b), puces = (b.alt || []).map((a, k) =>
-      '<button class="puce" type="button" data-act="alt" data-k="' + k + '">Autre lecture : <b>' + esc(a.replace(/\n/g, ' / ')) + '</b></button>').join('');
-    return '<li class="verif" data-id="' + esc(b.id) + '">' +
-      (b.mini ? '<img class="verif-photo" alt="Photo de la boîte ' + (i + 1) + ', touchez pour agrandir" data-mini="' + esc(b.id) + '"' + (b.hd ? ' data-hd="1"' : '') + '>' : '') +
-      '<div class="verif-texte"><span class="num">' + (i + 1) + '</span><p class="noms">' + nomsHTML(b) + '</p></div>' +
-      '<p class="detail">' + detailHTML(b, false) + '</p>' +
-      (puces ? '<div class="puces">' + puces + '</div>' : '') +
-      '<div class="verif-actions"><button class="secondaire" type="button" data-act="corriger">Corriger</button>' +
-      '<button class="principal" type="button" data-act="ok">C\'est bon</button></div></li>';
-  }).join('');
   const ul = $('#liste-boites');
   $('#zone-boites').hidden = !n; $('#lieu-vide').hidden = n > 0;
   ul.innerHTML = lieu.boxes.map((b, i) => {
     const d = detailHTML(b, true);
     return '<li class="boite" data-id="' + esc(b.id) + '">' +
-      '<button class="poignee" type="button" aria-label="Déplacer la boîte ' + (i + 1) + '" data-act="glisser">' +
-      '<svg width="18" height="14" viewBox="0 0 18 14" fill="currentColor" aria-hidden="true"><rect y="1" width="18" height="2" rx="1"/><rect y="6" width="18" height="2" rx="1"/><rect y="11" width="18" height="2" rx="1"/></svg></button>' +
       '<button class="boite-bouton" type="button" data-act="corriger"><span class="num">' + (i + 1) + '</span><span class="boite-texte">' +
       '<span class="noms" style="display:block">' + nomsHTML(b) + '</span>' + (d ? '<span class="detail">' + d + '</span>' : '') + '</span>' +
       (b.mini ? '<img class="mini" alt="" data-mini="' + esc(b.id) + '">' : '') + '</button></li>';
@@ -324,15 +309,6 @@ const PICTO_PHOTO = $('#btn-photo').innerHTML;
 $('#btn-retour').addEventListener('click', retourAccueil);
 $('#btn-photo').addEventListener('click', () => { if (lieuCourant) { history.pushState({ interne: true }, '', '#/lieu/' + lieuCourant + '/photo'); route(); } });
 
-$('#liste-verif').addEventListener('click', e => {
-  const b0 = e.target.closest('button[data-act]'), li = e.target.closest('.verif'); if (!b0 || !li) return;
-  const lieu = lieuActuel(); if (!lieu) return;
-  const b = lieu.boxes.find(x => x.id === li.dataset.id); if (!b) return;
-  if (b0.dataset.act === 'corriger') { ouvrirCorrection(b.id); return; }
-  if (b0.dataset.act === 'alt') { const a = (b.alt || [])[+b0.dataset.k]; if (a == null) return; b.alt = b.alt.filter(x => x !== a).concat([b.name]).filter(Boolean); b.name = a; }
-  if (b0.dataset.act === 'ok') { confirmer(lieu, b); vibrer(10); }
-  enregistrer(lieu); rendreLieu(lieu);
-});
 $('#liste-boites').addEventListener('click', e => {
   const b = e.target.closest('button[data-act="corriger"]'), li = e.target.closest('.boite');
   if (b && li && Date.now() > clicIgnore) ouvrirCorrection(li.dataset.id);
@@ -405,46 +381,6 @@ function supprimerBoite(id) {
     surAction: () => { const l = S.lireLieu(lieu.id); if (!l) return; l.boxes.splice(Math.min(i, l.boxes.length), 0, b); enregistrer(l); if (lieuCourant === l.id) rendreLieu(l); vibrer(8); }
   });
 }
-
-/* Glisser une boîte par sa poignée pour changer l'ordre de flashage. */
-let tri = null;
-$('#liste-boites').addEventListener('pointerdown', e => {
-  const p = e.target.closest('.poignee'); if (!p) return;
-  const li = p.closest('.boite'), ul = li.parentNode, items = Array.from(ul.children);
-  tri = { li: li, ul: ul, items: items, de: items.indexOf(li), vers: items.indexOf(li), y: e.clientY, h: li.offsetHeight, pid: e.pointerId };
-  try { p.setPointerCapture(e.pointerId); } catch (err) {}
-  li.classList.add('saisie'); ul.classList.add('en-tri'); vibrer(8);
-  e.preventDefault();
-});
-$('#liste-boites').addEventListener('pointermove', e => {
-  if (!tri || e.pointerId !== tri.pid) return;
-  const dy = e.clientY - tri.y, n = tri.items.length;
-  tri.vers = Math.max(0, Math.min(n - 1, tri.de + Math.round(dy / tri.h)));
-  tri.li.style.transform = 'translateY(' + dy + 'px) scale(1.02)';
-  tri.items.forEach((x, k) => {
-    if (x === tri.li) return;
-    let d = 0;
-    if (tri.vers > tri.de && k > tri.de && k <= tri.vers) d = -tri.h;
-    if (tri.vers < tri.de && k < tri.de && k >= tri.vers) d = tri.h;
-    x.style.transform = d ? 'translateY(' + d + 'px)' : '';
-  });
-  // défilement quand le doigt approche du bord
-  if (e.clientY < 80) window.scrollBy(0, -12); else if (e.clientY > window.innerHeight - 140) window.scrollBy(0, 12);
-});
-function finTri(e) {
-  if (!tri || e.pointerId !== tri.pid) return;
-  const t = tri; tri = null;
-  t.items.forEach(x => { x.style.transform = ''; });
-  t.li.classList.remove('saisie'); t.ul.classList.remove('en-tri');
-  clicIgnore = Date.now() + 300;
-  if (t.vers === t.de) return;
-  const lieu = lieuActuel(); if (!lieu) return;
-  const b = lieu.boxes.splice(t.de, 1)[0];
-  lieu.boxes.splice(t.vers, 0, b);
-  enregistrer(lieu); rendreLieu(lieu); vibrer(10);
-}
-$('#liste-boites').addEventListener('pointerup', finTri);
-$('#liste-boites').addEventListener('pointercancel', finTri);
 
 const FLECHE_H = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4"/></svg>', FLECHE_V = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v11M4 9l4 4 4-4"/></svg>';
 /* Sens de lecture après coup : remet les boîtes de chaque photo dans l'ordre horizontal (rangée par rangée) ou vertical
