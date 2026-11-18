@@ -291,3 +291,7 @@ h1, h2, p { margin: 0; }
 .visionneuse { position: fixed; z-index: 40; inset: 0; background: #000; color: #fff; overflow: hidden; touch-action: none; }
 .visionneuse img { position: absolute; left: 0; top: 0; transform-origin: 0 0; max-width: none; user-select: none; -webkit-user-drag: none; will-change: transform; }
 .vis-aide { position: absolute; left: 0; right: 0; bottom: calc(var(--bas) + 20px); text-align: center; font-size: 13px; color: rgba(255, 255, 255, .6); transition: opacity .4s ease; }
+
+.segments button svg { vertical-align: -2px; margin-right: 4px; }
+.feuille .note.sens { margin: -6px 2px 14px; }
+.lien-sens { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; margin: 10px 0 0; padding: 4px 14px; border: 0; border-radius: 99px; background: var(--carte); box-shadow: var(--ombre); color: var(--accent); font-size: 15px; font-weight: 600; }

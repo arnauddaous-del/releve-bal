@@ -49,6 +49,10 @@ confirmation, vibration légère sur validation et suppression. Textes courts, e
 - `index.html`, `css/app.css` : les écrans. Accueil (lieux en cartes), Résultat (`#ecran-lieu` : boîtes à vérifier en
   grand, puis l'ordre de flashage avec poignée pour glisser), Photo (`#ecran-photo`, plein écran sombre : visée,
   puis grille, puis progression de la lecture), feuilles (nouveau relevé, correction d'une boîte, partage, réglages).
+- Sens de lecture « Horizontal / Vertical » (`lieu.scan`, gardé par lieu) : sur l'écran de la grille avant la lecture,
+  et sur l'écran Résultat (pastille « Sens : … » sous le titre, ou menu « … ») pour remettre les boîtes déjà lues dans
+  cet ordre, photo par photo, d'après leur rangée et colonne (`reordonner()` ; une boîte ajoutée à la main suit la
+  boîte qui la précède ; « Annuler » remet l'ordre d'avant).
 - `js/app.js` : interface et navigation (`#/lieu/<id>`, `#/lieu/<id>/photo` ; la touche Retour ferme les feuilles et
   l'écran Photo), mémoire de noms du lieu (comme la V1), mises à jour.
 - `js/camera.js` : getUserMedia (caméra arrière), ImageCapture.takePhoto quand il existe (pleine définition, Android),

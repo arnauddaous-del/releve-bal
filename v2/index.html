@@ -49,6 +49,7 @@
     </div>
     <h1 class="grand-titre" id="lieu-nom"></h1>
     <p class="sous-titre" id="lieu-meta"></p>
+    <button class="lien-sens" id="btn-sens" type="button" hidden></button>
     <section id="zone-verif" aria-labelledby="t-verif" hidden>
       <h2 class="titre-section" id="t-verif">À vérifier</h2>
       <ul id="liste-verif" class="verifs"></ul>
@@ -100,8 +101,8 @@
       <div class="compteur"><button type="button" data-pas="rangs:-1" aria-label="Une rangée de moins">−</button><span class="valeur"><b id="n-rangs">0</b><small>rangées</small></span><button type="button" data-pas="rangs:1" aria-label="Une rangée de plus">+</button></div>
     </div>
     <div class="segments" role="radiogroup" aria-label="Sens de lecture des boîtes">
-      <button type="button" role="radio" data-sens="h">Rangée par rangée</button>
-      <button type="button" role="radio" data-sens="v">Colonne par colonne</button>
+      <button type="button" role="radio" data-sens="h"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4"/></svg> Horizontal</button>
+      <button type="button" role="radio" data-sens="v"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v11M4 9l4 4 4-4"/></svg> Vertical</button>
     </div>
     <p class="grille-info" id="grille-info"></p>
     <div class="retouches">

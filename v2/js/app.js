@@ -286,6 +286,9 @@ function rendreLieu(lieu) {
   meta.push(pluriel(n, 'boîte', 'boîtes'));
   if (aVerifier.length) meta.push(aVerifier.length + ' à vérifier');
   $('#lieu-meta').textContent = meta.join(' · ');
+  const bs = $('#btn-sens'); bs.hidden = !n;
+  bs.innerHTML = '<span style="color:var(--second);font-weight:400">Sens :</span> ' + (lieu.scan === 'v' ? FLECHE_V : FLECHE_H) + ' ' + (lieu.scan === 'v' ? 'Vertical' : 'Horizontal');
+  bs.setAttribute('aria-label', 'Sens de lecture : ' + (lieu.scan === 'v' ? 'vertical' : 'horizontal') + '. Changer');
   libererUrls();
   // les boîtes à vérifier d'abord, en grand, avec leur photo
   $('#zone-verif').hidden = !aVerifier.length;
@@ -443,12 +446,56 @@ function finTri(e) {
 $('#liste-boites').addEventListener('pointerup', finTri);
 $('#liste-boites').addEventListener('pointercancel', finTri);
 
-$('#btn-actions').addEventListener('click', () => {
-  ouvrirFeuille('<ul class="groupe">' +
+const FLECHE_H = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8h11M9 4l4 4-4 4"/></svg>', FLECHE_V = '<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 2v11M4 9l4 4 4-4"/></svg>';
+/* Sens de lecture après coup : remet les boîtes de chaque photo dans l'ordre horizontal (rangée par rangée) ou vertical
+   (colonne par colonne). Une boîte ajoutée à la main reste derrière la boîte qui la précède. */
+function reordonner(boxes, sens) {
+  const groupes = [];
+  let g = null;
+  boxes.forEach(b => {
+    if (b.photo > 0 && b.row > 0 && (!g || g.photo !== b.photo)) { g = { photo: b.photo, unites: [] }; groupes.push(g); }
+    if (!g) { g = { photo: 0, unites: [] }; groupes.push(g); }
+    if (b.photo > 0 && b.row > 0 && b.photo === g.photo) g.unites.push([b]);
+    else if (g.unites.length) g.unites[g.unites.length - 1].push(b);
+    else g.unites.push([b]);
+  });
+  const cle = u => (u[0].photo > 0 && u[0].row > 0 ? (sens === 'v' ? [u[0].col, u[0].row] : [u[0].row, u[0].col]) : [-1, -1]);
+  groupes.forEach(gr => gr.unites.sort((a, b) => { const x = cle(a), y = cle(b); return x[0] - y[0] || x[1] - y[1]; }));
+  return [].concat.apply([], groupes.map(gr => [].concat.apply([], gr.unites)));
+}
+function choisirSens(sens) {
+  const lieu = lieuActuel(); if (!lieu) return;
+  const avant = lieu.boxes.map(b => b.id), ancien = lieu.scan;
+  lieu.scan = sens === 'v' ? 'v' : 'h';
+  lieu.boxes = reordonner(lieu.boxes, lieu.scan);
+  const change = lieu.boxes.some((b, i) => b.id !== avant[i]);
+  enregistrer(lieu); fermerFeuille(); rendreLieu(lieu); vibrer(10);
+  if (!change) { bandeau('Sens de lecture : ' + (lieu.scan === 'v' ? 'vertical' : 'horizontal')); return; }
+  bandeau('Boîtes remises en ordre ' + (lieu.scan === 'v' ? 'vertical' : 'horizontal'), {
+    action: 'Annuler',
+    surAction: () => {
+      const l = S.lireLieu(lieu.id); if (!l) return;
+      const par = {}; l.boxes.forEach(b => { par[b.id] = b; });
+      l.boxes = avant.map(id => par[id]).filter(Boolean).concat(l.boxes.filter(b => avant.indexOf(b.id) < 0));
+      l.scan = ancien; enregistrer(l); if (lieuCourant === l.id) rendreLieu(l); vibrer(8);
+    }
+  });
+}
+
+function ouvrirActions() {
+  const lieu = lieuActuel(), sens = lieu && lieu.scan === 'v' ? 'v' : 'h';
+  ouvrirFeuille('<h2 class="feuille-titre">Sens de lecture</h2>' +
+    '<div class="segments" role="radiogroup" aria-label="Sens de lecture des boîtes">' +
+    '<button type="button" role="radio" data-act="sens-h" aria-checked="' + (sens === 'h') + '">' + FLECHE_H + ' Horizontal</button>' +
+    '<button type="button" role="radio" data-act="sens-v" aria-checked="' + (sens === 'v') + '">' + FLECHE_V + ' Vertical</button></div>' +
+    '<p class="note sens">Horizontal : rangée par rangée, de gauche à droite. Vertical : colonne par colonne, de haut en bas. Les boîtes déjà lues sont remises dans cet ordre.</p>' +
+    '<ul class="groupe">' +
     '<li><button class="ligne" type="button" data-act="modifier-lieu"><span class="ligne-texte"><span>Modifier la tournée ou le lieu</span></span></button></li>' +
     '<li><button class="ligne danger" type="button" data-act="supprimer-lieu">Supprimer ce lieu</button></li></ul>' +
     '<button class="texte large" type="button" data-act="fermer">Annuler</button>', 'Actions');
-});
+}
+$('#btn-actions').addEventListener('click', ouvrirActions);
+$('#btn-sens').addEventListener('click', ouvrirActions);
 
 /* ---------- partage : Excel ou CSV ---------- */
 $('#btn-partager').addEventListener('click', () => {
@@ -840,6 +887,7 @@ corps.addEventListener('click', e => {
         '<button class="principal large" type="submit">Enregistrer</button></form>', 'Modifier');
     return;
   }
+  if (act === 'sens-h' || act === 'sens-v') { choisirSens(act === 'sens-h' ? 'h' : 'v'); return; }
   if (act === 'fermer') fermerFeuille();
   else if (act === 'reprendre') { fermerFeuille(); reprendre(); }
   else if (act === 'installer') {

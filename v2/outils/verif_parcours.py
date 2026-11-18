@@ -167,6 +167,16 @@ with sync_playwright() as p:
     page.wait_for_timeout(300)
     check('« Annuler » remet la boîte à sa place', page.evaluate('''() => { const id = location.hash.split('/')[2]; return JSON.parse(localStorage.getItem('imprimbal2:lieu:' + id)).boxes.map(b => b.id); }''') == apres)
 
+    print('Sens de lecture après la lecture')
+    ordre = lambda: page.evaluate('''() => { const id = location.hash.split('/')[2]; return JSON.parse(localStorage.getItem('imprimbal2:lieu:' + id)).boxes.map(b => [b.id, b.row, b.col]); }''')
+    o0 = ordre()
+    check('raccourci « Horizontal » sous le titre', 'Horizontal' in page.inner_text('#btn-sens'))
+    page.click('#btn-sens'); page.wait_for_selector('[data-act="sens-v"]', timeout=3000)
+    page.click('[data-act="sens-v"]'); page.wait_for_timeout(400)
+    o1 = ordre()
+    check('« Vertical » remet les boîtes colonne par colonne', [(r, c) for _, r, c in o1] == sorted([(r, c) for _, r, c in o1], key=lambda x: (x[1], x[0])) and 'Vertical' in page.inner_text('#btn-sens'))
+    page.click('#bandeau button'); page.wait_for_timeout(300)
+    check('« Annuler » remet l\'ordre d\'avant', ordre() == o0)
     print('Partager')
     page.click('#btn-partager')
     with page.expect_download() as dl:
